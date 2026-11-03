@@ -1,0 +1,99 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import QuotePage from '../core/presentation/pages/QuotePage.astro';
+import { ensureContainer } from '../core/composition';
+
+const container = ensureContainer();
+const zones = container.catalog.zones().map((z: any) => ({
+  id: z.id,
+  name: z.name,
+}));
+const products = container.catalog.products().map((p: any) => ({
+  id: p.id,
+  name: p.name,
+}));
+
+const quoteStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Solicitar cotización',
+  description: 'Cuéntanos qué necesitas y te enviamos una cotización por WhatsApp con precios personalizados.',
+  url: 'https://aguaspachacamac.pe/cotizar',
+};
+---
+
+<BaseLayout title="Solicitar cotización" business={container.business} structuredData={quoteStructuredData}>
+  <QuotePage
+    zones={zones}
+    products={products}
+  />
+</BaseLayout>
+
+<script>
+  import { ensureContainer } from '../core/composition';
+
+  const container = ensureContainer();
+  const form = document.getElementById('quote-form') as HTMLFormElement;
+  const successScreen = document.getElementById('quote-success')!;
+  const codeEl = document.getElementById('quote-code')!;
+  const whatsappEl = document.getElementById('quote-whatsapp') as HTMLAnchorElement;
+  const againBtn = document.getElementById('quote-again')!;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const fd = new FormData(form);
+    const selectedProducts = fd.getAll('products') as string[];
+
+    const input = {
+      customerName: fd.get('customerName') as string,
+      customerPhone: fd.get('customerPhone') as string,
+      businessName: (fd.get('businessName') as string) || undefined,
+      notes: [
+        fd.get('businessType') ? `Tipo de negocio: ${fd.get('businessType')}` : '',
+        fd.get('consumption') ? `Consumo: ${fd.get('consumption')}` : '',
+        fd.get('zoneId') ? `Zona: ${fd.get('zoneId')}` : '',
+        selectedProducts.length ? `Productos: ${selectedProducts.join(', ')}` : '',
+        (fd.get('notes') as string) || '',
+      ].filter(Boolean).join('\n'),
+      pricingMode: container.pricingModeStore.get() as any,
+    };
+
+    const { SubmitQuote } = await import('../core/application');
+    const submitQuote = new SubmitQuote(
+      container.cartStore.get(),
+      container.catalog,
+      container.pricingService,
+      container.quoteGateway,
+      container.messageFormatter,
+      container.messageChannel,
+      container.codeGenerator,
+      container.clock,
+      container.analytics,
+      container.business,
+    );
+
+    const res = await submitQuote.execute(input);
+
+    if (!res.ok) {
+      alert('Errores: ' + res.error.join(', '));
+      return;
+    }
+
+    const { quote, whatsappLink } = res.value;
+
+    codeEl.textContent = quote.code.value;
+    whatsappEl.href = whatsappLink;
+    form.classList.add('hidden');
+    successScreen.classList.remove('hidden');
+
+    window.open(whatsappLink, '_blank');
+    container.analytics.track('quote_submitted', { code: quote.code.value });
+  });
+
+  againBtn.addEventListener('click', () => {
+    form.reset();
+    successScreen.classList.add('hidden');
+    form.classList.remove('hidden');
+  });
+</script>

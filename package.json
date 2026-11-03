@@ -9,9 +9,25 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check-boundaries": "node tools/check-boundaries.ts",
+    "validate-content": "node tools/validate-content.ts",
+    "generate:search-index": "node tools/generate-search-index.ts",
+    "generate:placeholders": "node tools/generate-placeholders.ts",
+    "test": "vitest",
+    "test:domain": "vitest tests/domain",
+    "test:application": "vitest tests/application",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "astro": "^7.4.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.6",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vitest": "^2.1.0"
   }
 }

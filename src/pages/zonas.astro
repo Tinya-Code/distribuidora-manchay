@@ -1,0 +1,34 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import ZonesPage from '../core/presentation/pages/ZonesPage.astro';
+import { ensureContainer } from '../core/composition';
+import zonesRaw from '../tenant/data/zones.json';
+
+const container = ensureContainer();
+const zonesRawArray = zonesRaw as any[];
+
+const zones = zonesRawArray.map((z: any) => ({
+  id: z.id,
+  name: z.name,
+  distritos: z.distritos ?? [],
+  shippingCostFormatted: new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(z.shippingCost),
+  freeShippingFromFormatted: z.freeShippingFrom ? new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(z.freeShippingFrom) : null,
+  minOrderFormatted: new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(z.minOrder),
+  deliveryTime: z.deliveryTime,
+  deliveryDays: z.deliveryDays ?? [],
+  slots: z.slots ?? [],
+  slug: z.slug,
+}));
+
+const zonesStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Zonas de reparto',
+  description: 'Revisa el costo de envío, pedido mínimo y tiempo de entrega de tu zona.',
+  url: 'https://aguaspachacamac.pe/zonas',
+};
+---
+
+<BaseLayout title="Zonas de reparto" business={container.business} structuredData={zonesStructuredData}>
+  <ZonesPage zones={zones} />
+</BaseLayout>

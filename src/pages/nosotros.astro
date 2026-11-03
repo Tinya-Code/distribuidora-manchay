@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import AboutPage from '../core/presentation/pages/AboutPage.astro';
+import { ensureContainer } from '../core/composition';
+
+const container = ensureContainer();
+---
+
+<BaseLayout title="Nosotros" business={container.business}>
+  <AboutPage
+    businessName={container.business.name}
+    slogan={container.business.slogan}
+  />
+</BaseLayout>

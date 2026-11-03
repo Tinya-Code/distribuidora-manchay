@@ -1,0 +1,218 @@
+[
+  {
+    "id": "prod_gaseosa_500",
+    "name": "Gaseosa 500 ml",
+    "slug": "gaseosa-500-ml",
+    "categoryId": "cat_gaseosas_personal",
+    "brandId": "marca_inca",
+    "description": "Gaseosa en botella personal de 500 ml.",
+    "images": ["gaseosa-500-1.jpg"],
+    "attributes": { "tamano": "500 ml", "sabor": "Cola", "envase": "Descartable" },
+    "tags": ["mas-pedido"],
+    "returnable": false,
+    "available": true,
+    "featured": true,
+    "presentations": [
+      {
+        "id": "pres_gaseosa_500_unidad",
+        "name": "Unidad",
+        "units": 1,
+        "sku": "GAS500-U",
+        "retailTiers": [{ "minQty": 1, "price": 2.50 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 2.00 }]
+      },
+      {
+        "id": "pres_gaseosa_500_paquete12",
+        "name": "Paquete x12",
+        "units": 12,
+        "sku": "GAS500-P12",
+        "retailTiers": [{ "minQty": 1, "price": 21.00 }, { "minQty": 5, "price": 19.00 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 19.00 }, { "minQty": 20, "price": 18.00 }]
+      }
+    ],
+    "complements": [],
+    "alternatives": ["prod_gaseosa_15", "prod_gaseosa_3"]
+  },
+  {
+    "id": "prod_gaseosa_15",
+    "name": "Gaseosa 1.5 L",
+    "slug": "gaseosa-1-5-l",
+    "categoryId": "cat_gaseosas_familiar",
+    "brandId": "marca_inca",
+    "description": "Gaseosa en botella familiar de 1.5 litros.",
+    "images": ["gaseosa-15-1.jpg"],
+    "attributes": { "tamano": "1.5 L", "sabor": "Cola", "envase": "Descartable" },
+    "tags": [],
+    "returnable": false,
+    "available": true,
+    "featured": false,
+    "presentations": [
+      {
+        "id": "pres_gaseosa_15_unidad",
+        "name": "Unidad",
+        "units": 1,
+        "sku": "GAS15-U",
+        "retailTiers": [{ "minQty": 1, "price": 5.00 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 4.50 }, { "minQty": 10, "price": 4.00 }]
+      }
+    ],
+    "complements": [],
+    "alternatives": ["prod_gaseosa_500", "prod_gaseosa_3"]
+  },
+  {
+    "id": "prod_gaseosa_3",
+    "name": "Gaseosa 3 L",
+    "slug": "gaseosa-3-l",
+    "categoryId": "cat_gaseosas_familiar",
+    "brandId": "marca_inca",
+    "description": "Gaseosa en botella extra familiar de 3 litros.",
+    "images": ["gaseosa-3-1.jpg"],
+    "attributes": { "tamano": "3 L", "sabor": "Cola", "envase": "Descartable" },
+    "tags": ["oferta"],
+    "returnable": false,
+    "available": true,
+    "featured": false,
+    "presentations": [
+      {
+        "id": "pres_gaseosa_3_unidad",
+        "name": "Unidad",
+        "units": 1,
+        "sku": "GAS3-U",
+        "retailTiers": [{ "minQty": 1, "price": 8.00 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 7.00 }, { "minQty": 10, "price": 6.50 }]
+      }
+    ],
+    "complements": [],
+    "alternatives": ["prod_gaseosa_500", "prod_gaseosa_15"]
+  },
+  {
+    "id": "prod_agua_625",
+    "name": "Agua sin gas 625 ml",
+    "slug": "agua-625-ml",
+    "categoryId": "cat_agua_embotellada",
+    "brandId": "marca_cielo",
+    "description": "Agua purificada en botella de 625 ml.",
+    "images": ["agua-625-1.jpg"],
+    "attributes": { "tamano": "625 ml", "sabor": "Sin gas", "envase": "Descartable" },
+    "tags": ["mas-pedido"],
+    "returnable": false,
+    "available": true,
+    "featured": true,
+    "presentations": [
+      {
+        "id": "pres_agua_625_paquete6",
+        "name": "Paquete x6",
+        "units": 6,
+        "sku": "AGUA625-P6",
+        "retailTiers": [{ "minQty": 1, "price": 8.00 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 7.00 }, { "minQty": 10, "price": 6.50 }]
+      }
+    ],
+    "complements": [],
+    "alternatives": []
+  },
+  {
+    "id": "prod_agua_gas",
+    "name": "Agua con gas 500 ml",
+    "slug": "agua-con-gas-500",
+    "categoryId": "cat_agua_embotellada",
+    "brandId": "marca_sanluis",
+    "description": "Agua mineral con gas en botella de 500 ml.",
+    "images": ["agua-gas-500.jpg"],
+    "attributes": { "tamano": "500 ml", "sabor": "Con gas", "envase": "Descartable" },
+    "tags": [],
+    "returnable": false,
+    "available": true,
+    "featured": false,
+    "presentations": [
+      {
+        "id": "pres_agua_gas_500_unidad",
+        "name": "Unidad",
+        "units": 1,
+        "sku": "AGAS500-U",
+        "retailTiers": [{ "minQty": 1, "price": 2.00 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 1.80 }]
+      }
+    ],
+    "complements": [],
+    "alternatives": ["prod_agua_625"]
+  },
+  {
+    "id": "prod_bidon_20",
+    "name": "Bidón de agua 20 L",
+    "slug": "bidon-agua-20-litros",
+    "categoryId": "cat_agua_bidones",
+    "brandId": "marca_sanluis",
+    "description": "Bidón de agua purificada de 20 litros, retornable.",
+    "images": ["bidon-20-1.jpg"],
+    "attributes": { "tamano": "20 L", "sabor": "Sin gas", "envase": "Retornable" },
+    "tags": ["mas-pedido"],
+    "returnable": true,
+    "available": true,
+    "featured": true,
+    "presentations": [
+      {
+        "id": "pres_bidon_20_unidad",
+        "name": "Bidón lleno",
+        "units": 1,
+        "sku": "BID20-U",
+        "retailTiers": [{ "minQty": 1, "price": 10.00 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 9.00 }, { "minQty": 10, "price": 8.50 }]
+      }
+    ],
+    "complements": [],
+    "alternatives": []
+  },
+  {
+    "id": "prod_energizante",
+    "name": "Energizante 250 ml",
+    "slug": "energizante-250-ml",
+    "categoryId": "cat_energizantes",
+    "brandId": "marca_inca",
+    "description": "Bebida energizante en lata de 250 ml.",
+    "images": ["energizante-250.jpg"],
+    "attributes": { "tamano": "250 ml", "sabor": "Original", "envase": "Lata" },
+    "tags": [],
+    "returnable": false,
+    "available": true,
+    "featured": false,
+    "presentations": [
+      {
+        "id": "pres_energizante_250_paquete6",
+        "name": "Paquete x6",
+        "units": 6,
+        "sku": "ENER250-P6",
+        "retailTiers": [{ "minQty": 1, "price": 15.00 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 13.50 }, { "minQty": 5, "price": 12.00 }]
+      }
+    ],
+    "complements": [],
+    "alternatives": []
+  },
+  {
+    "id": "prod_pack_familiar",
+    "name": "Pack Familiar (6 gaseosas + 2 aguas)",
+    "slug": "pack-familiar",
+    "categoryId": "cat_ofertas",
+    "brandId": "marca_inca",
+    "description": "Pack con 6 gaseosas de 500 ml y 2 aguas de 625 ml.",
+    "images": ["pack-familiar.jpg"],
+    "attributes": { "tamano": "Pack", "sabor": "Mixto", "envase": "Descartable" },
+    "tags": ["oferta"],
+    "returnable": false,
+    "available": true,
+    "featured": true,
+    "presentations": [
+      {
+        "id": "pres_pack_familiar_unidad",
+        "name": "Pack",
+        "units": 8,
+        "sku": "PACK-FAM",
+        "retailTiers": [{ "minQty": 1, "price": 25.00 }],
+        "wholesaleTiers": [{ "minQty": 1, "price": 22.00 }, { "minQty": 5, "price": 20.00 }]
+      }
+    ],
+    "complements": [],
+    "alternatives": []
+  }
+]

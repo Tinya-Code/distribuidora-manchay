@@ -1,0 +1,120 @@
+---
+// ZonePage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  zone: {
+    id: string;
+    name: string;
+    slug: string;
+    distritos: string[];
+    shippingCost: { amount: number; format: () => string };
+    freeShippingFrom?: { amount: number; format: () => string } | null;
+    minOrder: { amount: number; format: () => string };
+    deliveryTime: string;
+    deliveryDays: number[];
+    slots: string[];
+    seo?: {
+      title?: string;
+      text?: string;
+    };
+  };
+  featuredProducts: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    available: boolean;
+    presentations: Array<{
+      id: string;
+      name: string;
+      retailPrices: { priceFor: (qty: number) => { amount: number; format: () => string } };
+    }>;
+  }>;
+  structuredData?: Record<string, unknown>;
+}
+const {
+  zone,
+  featuredProducts,
+  structuredData,
+} = Astro.props;
+const shippingCostFormatted = zone.shippingCost.format();
+const freeShippingFromFormatted = zone.freeShippingFrom ? zone.freeShippingFrom.format() : null;
+const minOrderFormatted = zone.minOrder.format();
+const deliveryDaysText = zone.deliveryDays.join(', ');
+const slotsText = zone.slots.join(', ');
+const distritosText = zone.distritos.join(', ');
+const zonaName = zone.name;
+const zonaSlug = zone.slug;
+const seoTitle = zone.seo?.title ?? `Venta de agua en ${zonaName}`;
+const seoText = zone.seo?.text;
+---
+
+<main class="container mx-auto px-4 py-8">
+  <nav class="mb-6">
+    <a href="/zonas" class="text-help">Zonas de reparto</a>
+    <span class="mx-1 text-neutral">/</span>
+    <span class="text-section font-medium">{zonaName}</span>
+  </nav>
+
+  <h1 class="text-section font-display text-primary mb-4">{zonaName}</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Info de zona -->
+    <div class="col-span-1 md:col-span-2 space-y-4">
+      <div class="border border-neutral/20 rounded-lg p-4 bg-surface">
+        <h2 class="text-label font-medium mb-3">Detalles de reparto</h2>
+        <div class="space-y-2 text-sm">
+          <p><span class="font-medium">Costo de envío:</span> <span class="text-primary">{shippingCostFormatted}</span></p>
+          {freeShippingFromFormatted ? (
+            <p><span class="font-medium">Envío gratis desde:</span> <span class="text-success">{freeShippingFromFormatted}</span></p>
+          ) : null}
+          <p><span class="font-medium">Pedido mínimo:</span> {minOrderFormatted}</p>
+          <p><span class="font-medium">Tiempo de entrega:</span> {zone.deliveryTime}</p>
+          <p><span class="font-medium">Días de reparto:</span> {deliveryDaysText}</p>
+          <p><span class="font-medium">Franjas:</span> {slotsText}</p>
+        </div>
+      </div>
+
+      <div class="border border-neutral/20 rounded-lg p-4 bg-surface mt-4">
+        <h2 class="text-label font-medium mb-3">Ubicación en el mapa</h2>
+        <p class="text-help text-sm mb-3">Abre la zona en Google Maps para ver el alcance de reparto.</p>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${zonaName}, ${distritosText}, Lima, Perú`)}`}
+          target="_blank"
+          rel="noopener"
+          class="block w-full bg-primary text-white text-center px-4 py-3 rounded font-medium"
+        >
+          Ver en Google Maps
+        </a>
+      </div>
+
+      {seoText && (
+        <div class="border border-neutral/20 rounded-lg p-4 bg-surface">
+          <h2 class="text-label font-medium mb-3">Sobre esta zona</h2>
+          <p class="text-neutral">{seoText}</p>
+        </div>
+      )}
+    </div>
+
+    <!-- Productos más pedidos -->
+    <div class="col-span-1 md:col-span-1 space-y-4">
+      <h2 class="text-label font-medium mb-3">Productos más pedidos</h2>
+      <div class="space-y-3">
+        {featuredProducts.map((p: any) => (
+          <article class="flex items-center gap-3 p-3 border border-neutral/20 rounded bg-surface">
+            <div class="w-16 h-16 bg-neutral/10 rounded flex items-center justify-center">
+              <img src={`/img/placeholder/product-${p.slug}.svg`} alt={p.name} class="w-full h-full object-cover" />
+            </div>
+            <div class="flex-1">
+              <p class="text-label font-medium">{p.name}</p>
+              <p class="text-help text-xs text-neutral">{p.presentations?.[0]?.name ?? ''}</p>
+            </div>
+            <span class="text-primary font-medium">{p.presentations?.[0]?.retailPrices?.priceFor?.(1)?.format?.() ?? ''}</span>
+          </article>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-8">
+    <a href="/carrito" class="block w-full bg-primary text-white text-center py-3 rounded-md font-medium">Armar mi pedido</a>
+  </div>
+</main>

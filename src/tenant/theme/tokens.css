@@ -1,0 +1,10 @@
+:root {
+  --color-primary: #0284c7;
+  --color-secondary: #0f172a;
+  --color-bg: #f8fafc;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+}

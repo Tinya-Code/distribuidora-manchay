@@ -1,0 +1,6 @@
+---
+interface Props { amount: number; currency?: string; }
+const { amount, currency = 'PEN' } = Astro.props;
+const symbol = currency === 'PEN' ? 'S/' : currency;
+---
+<span class="price">{symbol} {amount.toFixed(2)}</span>

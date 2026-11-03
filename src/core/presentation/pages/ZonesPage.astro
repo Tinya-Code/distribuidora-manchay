@@ -1,0 +1,59 @@
+---
+// ZonesPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  zones: Array<{
+    id: string;
+    name: string;
+    distritos: string[];
+    shippingCostFormatted: string;
+    freeShippingFromFormatted?: string | null;
+    minOrderFormatted: string;
+    deliveryTime: string;
+    deliveryDays: number[];
+    slots: string[];
+    slug: string;
+  }>;
+  structuredData?: Record<string, unknown>;
+}
+const {
+  zones,
+  structuredData,
+} = Astro.props;
+---
+
+<main class="container mx-auto px-4 py-8">
+  <h1 class="text-section font-display text-primary mb-6">Zonas de reparto</h1>
+  <p class="text-neutral mb-8">Revisa el costo de envío, pedido mínimo y tiempo de entrega de tu zona.</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {zones.map((z: any) => (
+      <article class="border border-neutral/20 rounded-lg p-5 bg-surface hover:border-primary transition">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h2 class="text-label font-medium">{z.name}</h2>
+            <p class="text-help text-xs text-neutral">{z.distritos.join(', ')}</p>
+          </div>
+          <span class="text-primary font-medium">{z.shippingCostFormatted}</span>
+        </div>
+        <div class="space-y-2 text-sm mb-4">
+          {z.freeShippingFromFormatted ? (
+            <p><span class="font-medium">Envío gratis desde:</span> {z.freeShippingFromFormatted}</p>
+          ) : (
+            <p><span class="font-medium">Envío gratis desde:</span> —</p>
+          )}
+          <p><span class="font-medium">Pedido mínimo:</span> {z.minOrderFormatted}</p>
+          <p><span class="font-medium">Entrega:</span> {z.deliveryTime}</p>
+          <p><span class="font-medium">Días:</span> {z.deliveryDays.join(', ')}</p>
+          <p><span class="font-medium">Franjas:</span> {z.slots.join(', ')}</p>
+        </div>
+        <a href={`/zonas/${z.slug}`} class="block w-full text-center border border-primary text-primary text-sm px-3 py-2 rounded">
+          Ver zona
+        </a>
+      </article>
+    ))}
+  </div>
+
+  <div class="mt-8">
+    <a href="/carrito" class="block w-full bg-primary text-white text-center py-3 rounded-md font-medium">Armar mi pedido</a>
+  </div>
+</main>

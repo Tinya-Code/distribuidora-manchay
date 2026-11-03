@@ -1,5 +1,14 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "exclude": ["dist"],
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "verbatimModuleSyntax": false,
+    "types": ["node", "vitest/globals"],
+      "paths": {
+      "@core/*": ["./src/core/*"],
+      "@tenant/*": ["./src/tenant/*"]
+    }
+  }
 }

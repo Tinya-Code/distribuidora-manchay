@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import NotFoundPage from '../core/presentation/pages/NotFoundPage.astro';
+import { ensureContainer } from '../core/composition';
+
+const container = ensureContainer();
+---
+
+<BaseLayout title="404" business={container.business}>
+  <NotFoundPage title="404" />
+</BaseLayout>

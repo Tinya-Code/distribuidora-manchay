@@ -1,0 +1,11 @@
+[
+  { "id": "cat_agua", "name": "Agua", "slug": "agua", "parentId": null, "order": 1, "image": "agua.jpg", "description": "Agua purificada en bidones y botellas.", "seo": { "title": "Venta de agua en Pachacámac", "description": "Bidones y botellas de agua con delivery." } },
+  { "id": "cat_agua_bidones", "name": "Bidones", "slug": "bidones", "parentId": "cat_agua", "order": 1, "image": "bidones.jpg", "description": "Bidones de 20 litros retornables y descartables." },
+  { "id": "cat_agua_embotellada", "name": "Agua embotellada", "slug": "embotellada", "parentId": "cat_agua", "order": 2, "image": "embotellada.jpg", "description": "Agua en botellas personales y familiares." },
+  { "id": "cat_gaseosas", "name": "Gaseosas", "slug": "gaseosas", "parentId": null, "order": 2, "image": "gaseosas.jpg", "description": "Gaseosas al por mayor y menor con entrega a domicilio.", "seo": { "title": "Gaseosas al por mayor en Pachacámac", "description": "Compra gaseosas por paquete o caja con delivery." } },
+  { "id": "cat_gaseosas_personal", "name": "Personal (hasta 500 ml)", "slug": "personal", "parentId": "cat_gaseosas", "order": 1, "image": "personal.jpg", "description": "Gaseosas en botella personal." },
+  { "id": "cat_gaseosas_familiar", "name": "Familiar (1.5 L a 3 L)", "slug": "familiar", "parentId": "cat_gaseosas", "order": 2, "image": "familiar.jpg", "description": "Gaseosas en botella familiar." },
+  { "id": "cat_energizantes", "name": "Energizantes", "slug": "energizantes", "parentId": null, "order": 3, "image": "energizantes.jpg", "description": "Bebidas energizantes por mayor y menor." },
+  { "id": "cat_jugos", "name": "Jugos y néctares", "slug": "jugos-nectares", "parentId": null, "order": 4, "image": "jugos.jpg", "description": "Jugos y néctares en botella y caja." },
+  { "id": "cat_ofertas", "name": "Ofertas y packs", "slug": "ofertas-packs", "parentId": null, "order": 5, "image": "ofertas.jpg", "description": "Packs y ofertas especiales." }
+]

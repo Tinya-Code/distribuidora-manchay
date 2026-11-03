@@ -1,0 +1,10 @@
+{
+  "identity": { "name": "Distribuidora Pachacámac", "slogan": "Agua y gaseosas a tu puerta" },
+  "contact": { "phone": "+51 999 111 222", "whatsapp": "+51 999 111 222", "email": "ventas@aguaspachacamac.pe", "address": "Av. Ejemplo 123, Pachacámac, Lima" },
+  "hours": { "open": "07:00", "close": "19:00", "days": [1, 2, 3, 4, 5, 6], "cutoff": "17:00" },
+  "payments": { "methods": ["cash", "yape", "plin", "transfer"] },
+  "api": { "baseUrl": "https://api.aguaspachacamac.pe", "enabled": true },
+  "features": { "cart": true, "checkout": true, "quote": true, "businessHours": true, "consumptionCalculator": true, "quickOrder": true, "apiMock": true },
+  "analytics": { "provider": "none" },
+  "seo": { "title": "Distribuidora de agua y gaseosas en Pachacámac", "description": "Venta por mayor y menor con entrega a domicilio en Pachacámac, Manchay y Villa El Salvador." }
+}

@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import { categories } from '../tenant/data';
+---
+<BaseLayout title="Categorías">
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-section font-display text-primary mb-6">Categorías</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {categories.filter((c: any) => !c.parentId).map((cat: any) => (
+        <article class="border border-neutral/20 rounded-lg p-6 bg-surface hover:border-primary transition">
+          <h2 class="text-label font-medium mb-2">{cat.name}</h2>
+          <p class="text-help text-neutral">{cat.description ?? ''}</p>
+          <a href={`/productos/${cat.slug ?? cat.id}`} class="block mt-4 text-primary font-medium">Ver productos →</a>
+        </article>
+      ))}
+    </div>
+  </main>
+</BaseLayout>

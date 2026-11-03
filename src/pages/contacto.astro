@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import ContactPage from '../core/presentation/pages/ContactPage.astro';
+import { ensureContainer } from '../core/composition';
+
+const container = ensureContainer();
+---
+
+<BaseLayout title="Contacto" business={container.business}>
+  <ContactPage business={container.business} />
+</BaseLayout>

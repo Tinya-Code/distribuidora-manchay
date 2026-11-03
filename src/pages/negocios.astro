@@ -1,0 +1,220 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import BusinessPage from '../core/presentation/pages/BusinessPage.astro';
+import { ensureContainer } from '../core/composition';
+import { segments } from '../tenant/data';
+
+const container = ensureContainer();
+const products = container.catalog.products();
+const categories = container.catalog.categories();
+---
+
+<BaseLayout title="Para negocios" business={container.business}>
+  <BusinessPage
+    segments={segments as any[]}
+    products={products}
+    categories={categories as any[]}
+  />
+</BaseLayout>
+
+<script>
+  import { ensureContainer } from '../core/composition';
+
+  const container = ensureContainer();
+  const cartStore = container.cartStore;
+  const products = container.catalog.products();
+
+  // === Pedido rápido ===
+  const qoBody = document.getElementById('qo-body')!;
+  const qoSummary = document.getElementById('qo-summary')!;
+  const btnQoAdd = document.getElementById('btn-qo-add')!;
+  const btnQoClear = document.getElementById('btn-qo-clear')!;
+  const qoCategory = document.getElementById('qo-category') as HTMLSelectElement;
+  const qoSearch = document.getElementById('qo-search') as HTMLInputElement;
+
+  function getSelected() {
+    const rows = qoBody.querySelectorAll('tr[data-product-id]');
+    const selected: { productId: string; presentationId: string; quantity: number }[] = [];
+    rows.forEach((row) => {
+      const qtyInput = row.querySelector('[data-qty]') as HTMLInputElement;
+      const qty = parseInt(qtyInput.value, 10) || 0;
+      if (qty > 0) {
+        const productId = row.getAttribute('data-product-id')!;
+        const p = products.find((x: any) => x.id === productId);
+        selected.push({ productId, presentationId: p.presentations[0].id, quantity: qty });
+      }
+    });
+    return selected;
+  }
+
+  function updateSummary() {
+    const count = getSelected().length;
+    qoSummary.textContent = `${count} producto(s) seleccionado(s)`;
+    btnQoAdd.classList.toggle('hidden', count === 0);
+  }
+
+  qoBody.addEventListener('input', updateSummary);
+
+  // Filter by category and search
+  function filterRows() {
+    const cat = qoCategory.value;
+    const search = qoSearch.value.toLowerCase();
+    qoBody.querySelectorAll('tr[data-product-id]').forEach((row) => {
+      const name = (row.querySelector('td')?.textContent ?? '').toLowerCase();
+      const rowCat = row.getAttribute('data-category-id');
+      const matchCat = cat === 'all' || rowCat === cat;
+      const matchSearch = !search || name.includes(search);
+      (row as HTMLElement).style.display = matchCat && matchSearch ? '' : 'none';
+    });
+  }
+  qoCategory.addEventListener('change', filterRows);
+  qoSearch.addEventListener('input', filterRows);
+
+  btnQoAdd.addEventListener('click', () => {
+    const selected = getSelected();
+    selected.forEach((s) => {
+      cartStore.addToCart(s.productId as any, s.presentationId as any, s.quantity);
+    });
+    window.dispatchEvent(new CustomEvent('cart-updated'));
+    alert(`${selected.length} producto(s) agregado(s) al carrito.`);
+    // Reset quantities
+    qoBody.querySelectorAll('[data-qty]').forEach((input) => {
+      (input as HTMLInputElement).value = '0';
+    });
+    updateSummary();
+  });
+
+  btnQoClear.addEventListener('click', () => {
+    qoBody.querySelectorAll('[data-qty]').forEach((input) => {
+      (input as HTMLInputElement).value = '0';
+    });
+    updateSummary();
+  });
+
+  // === Calculadora de consumo ===
+  // Rule-based suggestions per business type and size
+  const CALC_RULES: Record<string, Record<string, { productId: string; qty: number }[]>> = {
+    bodega: {
+      small: [
+        { productId: 'prod_agua_625', qty: 12 },
+        { productId: 'prod_gaseosa_1_5l', qty: 6 },
+        { productId: 'prod_bidon_20l', qty: 2 },
+      ],
+      medium: [
+        { productId: 'prod_agua_625', qty: 24 },
+        { productId: 'prod_gaseosa_500ml', qty: 12 },
+        { productId: 'prod_gaseosa_3l', qty: 6 },
+        { productId: 'prod_bidon_20l', qty: 4 },
+      ],
+      large: [
+        { productId: 'prod_agua_625', qty: 48 },
+        { productId: 'prod_gaseosa_500ml', qty: 24 },
+        { productId: 'prod_gaseosa_3l', qty: 12 },
+        { productId: 'prod_bidon_20l', qty: 8 },
+      ],
+    },
+    restaurante: {
+      small: [
+        { productId: 'prod_agua_625', qty: 18 },
+        { productId: 'prod_gaseosa_500ml', qty: 6 },
+        { productId: 'prod_bidon_20l', qty: 3 },
+      ],
+      medium: [
+        { productId: 'prod_agua_625', qty: 36 },
+        { productId: 'prod_gaseosa_500ml', qty: 12 },
+        { productId: 'prod_gaseosa_1_5l', qty: 8 },
+        { productId: 'prod_bidon_20l', qty: 6 },
+      ],
+      large: [
+        { productId: 'prod_agua_625', qty: 72 },
+        { productId: 'prod_gaseosa_500ml', qty: 24 },
+        { productId: 'prod_gaseosa_3l', qty: 12 },
+        { productId: 'prod_bidon_20l', qty: 12 },
+      ],
+    },
+    oficina: {
+      small: [
+        { productId: 'prod_agua_625', qty: 12 },
+        { productId: 'prod_gaseosa_500ml', qty: 4 },
+        { productId: 'prod_bidon_20l', qty: 2 },
+      ],
+      medium: [
+        { productId: 'prod_agua_625', qty: 24 },
+        { productId: 'prod_gaseosa_500ml', qty: 8 },
+        { productId: 'prod_bidon_20l', qty: 4 },
+      ],
+      large: [
+        { productId: 'prod_agua_625', qty: 48 },
+        { productId: 'prod_gaseosa_500ml', qty: 16 },
+        { productId: 'prod_bidon_20l', qty: 8 },
+      ],
+    },
+    evento: {
+      small: [
+        { productId: 'prod_agua_625', qty: 24 },
+        { productId: 'prod_gaseosa_500ml', qty: 12 },
+        { productId: 'prod_pack_familiar', qty: 2 },
+      ],
+      medium: [
+        { productId: 'prod_agua_625', qty: 48 },
+        { productId: 'prod_gaseosa_500ml', qty: 24 },
+        { productId: 'prod_pack_familiar', qty: 4 },
+        { productId: 'prod_energizante_250', qty: 6 },
+      ],
+      large: [
+        { productId: 'prod_agua_625', qty: 96 },
+        { productId: 'prod_gaseosa_500ml', qty: 48 },
+        { productId: 'prod_pack_familiar', qty: 8 },
+        { productId: 'prod_energizante_250', qty: 12 },
+      ],
+    },
+  };
+
+  const btnCalc = document.getElementById('btn-calc')!;
+  const calcResult = document.getElementById('calc-result')!;
+  const calcList = document.getElementById('calc-list')!;
+  const btnCalcAdd = document.getElementById('btn-calc-add')!;
+  let calcItems: { productId: string; presentationId: string; quantity: number; name: string }[] = [];
+
+  btnCalc.addEventListener('click', () => {
+    const type = (document.getElementById('calc-type') as HTMLSelectElement).value;
+    const size = (document.getElementById('calc-size') as HTMLSelectElement).value;
+    const rules = CALC_RULES[type]?.[size] ?? [];
+
+    calcItems = rules
+      .map((r) => {
+        const p = products.find((x: any) => x.id === r.productId);
+        if (!p) return null;
+        return {
+          productId: r.productId,
+          presentationId: p.presentations[0].id,
+          quantity: r.qty,
+          name: p.name,
+        };
+      })
+      .filter(Boolean) as typeof calcItems;
+
+    if (calcItems.length === 0) {
+      calcList.innerHTML = '<p class="text-neutral text-sm">No hay sugerencias disponibles.</p>';
+    } else {
+      calcList.innerHTML = calcItems
+        .map(
+          (item) => `
+          <div class="flex items-center justify-between p-2 border rounded bg-neutral/5">
+            <span class="text-sm">${item.name}</span>
+            <span class="text-label font-medium">${item.quantity} uds</span>
+          </div>`,
+        )
+        .join('');
+    }
+    calcResult.classList.remove('hidden');
+  });
+
+  btnCalcAdd.addEventListener('click', () => {
+    calcItems.forEach((item) => {
+      cartStore.addToCart(item.productId as any, item.presentationId as any, item.quantity);
+    });
+    window.dispatchEvent(new CustomEvent('cart-updated'));
+    alert(`${calcItems.length} producto(s) agregado(s) al carrito.`);
+  });
+</script>

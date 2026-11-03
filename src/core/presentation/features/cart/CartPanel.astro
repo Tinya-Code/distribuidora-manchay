@@ -1,0 +1,39 @@
+---
+// Vista dumb: panel del carrito con moldes (<template>) para líneas.
+---
+<dist-cart>
+<section class="cart-panel fixed right-0 top-0 h-full w-80 bg-surface shadow-lg p-4 overflow-y-auto" data-cart-panel>
+  <header class="flex items-center justify-between mb-4">
+    <h2 class="text-section font-display">Carrito</h2>
+    <button type="button" class="text-neutral" data-cart-close>✕</button>
+  </header>
+
+  <div data-cart-lines class="space-y-3"></div>
+
+  <template data-cart-line-template>
+    <div class="cart-line flex items-center gap-3 border-b border-neutral/20 pb-3" data-line>
+      <div class="flex-1">
+        <p class="text-label font-medium" data-line-name></p>
+        <p class="text-help text-neutral" data-line-presentation></p>
+        <p class="text-help" data-line-price></p>
+      </div>
+      <div class="flex items-center gap-1">
+        <button type="button" class="px-2 py-1 border rounded" data-line-dec>−</button>
+        <span class="w-8 text-center" data-line-qty></span>
+        <button type="button" class="px-2 py-1 border rounded" data-line-inc>+</button>
+      </div>
+      <button type="button" class="text-danger text-sm" data-line-remove>Quitar</button>
+    </div>
+  </template>
+
+  <div class="mt-4 border-t pt-4">
+    <div class="flex justify-between text-label"><span>Subtotal</span><span data-cart-subtotal>S/ 0.00</span></div>
+    <div class="flex justify-between text-label"><span>Envío</span><span data-cart-shipping>S/ 0.00</span></div>
+    <div class="flex justify-between text-label font-bold mt-2"><span>Total</span><span data-cart-total>S/ 0.00</span></div>
+  </div>
+
+  <div class="mt-4">
+    <a href="/carrito" class="block text-center bg-primary text-white py-2 rounded-md">Ir al checkout</a>
+  </div>
+</section>
+</dist-cart>

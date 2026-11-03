@@ -1,11 +1,133 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import HomePage from '../core/presentation/pages/HomePage.astro';
+import { ensureContainer } from '../core/composition';
+import { products, categories, reviews, faqs, business } from '../tenant/data';
+import zonesRaw from '../tenant/data/zones.json';
+import { PricingMode } from '../core/domain';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const container = ensureContainer();
+const pricingModeStore = container.pricingModeStore;
+const cartStore = container.cartStore;
+
+const mode = pricingModeStore.get() as PricingMode;
+const featured = products.filter((p: any) => p.featured).slice(0, 6);
+const zones = zonesRaw as any[];
+
+const faqStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f: any) => ({
+    '@type': 'Question',
+    name: f.question,
+    acceptedAnswer: { '@type': 'Answer', text: f.answer },
+  })),
+};
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<BaseLayout title={business.seo.title} business={business} structuredData={faqStructuredData}>
+  <HomePage
+    business={business}
+    mode={mode}
+    featured={featured}
+    categories={categories as any[]}
+    zones={zones.map((z: any) => ({
+      id: z.id,
+      name: z.name,
+      deliveryTime: z.deliveryTime,
+      shippingCost: z.shippingCost,
+    }))}
+    reviews={reviews as any[]}
+    faqs={faqs as any[]}
+  />
+</BaseLayout>
+
+<script>
+  import { ensureContainer } from '../core/composition';
+
+  const container = ensureContainer();
+  const pricingModeStore = container.pricingModeStore;
+  const cartStore = container.cartStore;
+
+  const countEl = document.getElementById('cart-count');
+  const update = () => {
+    if (countEl) countEl.textContent = String(cartStore.get().totalQuantity());
+  };
+  cartStore.subscribe(update);
+  update();
+
+  const modeHome = document.getElementById('mode-home');
+  const modeBusiness = document.getElementById('mode-business');
+  let currentMode = pricingModeStore.get() as 'home' | 'business';
+
+  function setMode(mode: 'home' | 'business') {
+    currentMode = mode;
+    pricingModeStore.setMode(mode);
+    modeHome!.className = `p-4 rounded border text-center transition ${mode === 'home' ? 'bg-primary text-white border-primary' : 'bg-surface text-neutral border-neutral'}`;
+    modeBusiness!.className = `p-4 rounded border text-center transition ${mode === 'business' ? 'bg-primary text-white border-primary' : 'bg-surface text-neutral border-neutral'}`;
+    location.reload();
+  }
+
+  modeHome?.addEventListener('click', () => setMode('home'));
+  modeBusiness?.addEventListener('click', () => setMode('business'));
+
+  document.getElementById('cart-toggle')?.addEventListener('click', () => {
+    document.querySelector('[data-cart-panel]')?.classList.toggle('hidden');
+  });
+
+  document.querySelectorAll('button[data-add-to-cart]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      cartStore.addToCart(
+        btn.getAttribute('data-product-id')! as any,
+        btn.getAttribute('data-presentation-id')! as any,
+        1
+      );
+      window.dispatchEvent(new CustomEvent('cart-updated'));
+      const original = btn.textContent;
+      btn.textContent = '✓';
+      btn.classList.add('bg-success');
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('bg-success');
+      }, 1000);
+    });
+  });
+
+  // Indicador de horario dinámico
+  (function () {
+    const statusEl = document.getElementById('business-status');
+    if (!statusEl) return;
+    const { open, close, days, cutoff } = JSON.parse('{"open":"07:00","close":"19:00","days":[1,2,3,4,5,6],"cutoff":"17:00"}');
+    const now = new Date();
+    const day = now.getDay();
+    const isOpenDay = days.includes(day);
+    const [oh, om] = open.split(':').map(Number);
+    const [ch, cm] = close.split(':').map(Number);
+    const [cuth, cutm] = (cutoff || '23:59').split(':').map(Number);
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const openMinutes = oh * 60 + om;
+    const closeMinutes = ch * 60 + cm;
+    const cutoffMinutes = cuth * 60 + cutm;
+
+    const formatTime = (h: number, m: number) => {
+      const hh = h % 12 || 12;
+      const mm = String(m).padStart(2, '0');
+      const ap = h >= 12 ? 'p.m.' : 'a.m.';
+      return `${hh}:${mm} ${ap}`;
+    };
+
+    if (!isOpenDay) {
+      statusEl.textContent = 'Cerrado. Te atendemos de nuevo el lunes desde las ' + formatTime(oh, om) + '.';
+      return;
+    }
+    if (nowMinutes < openMinutes || nowMinutes >= closeMinutes) {
+      statusEl.textContent = 'Cerrado ahora. Horario: ' + formatTime(oh, om) + ' a ' + formatTime(ch, cm) + '.';
+      return;
+    }
+    if (nowMinutes < cutoffMinutes) {
+      statusEl.textContent = 'Abierto ahora. Entrega hoy hasta las ' + formatTime(ch, cm) + '.';
+    } else {
+      statusEl.textContent = 'Abierto ahora. Hora de corte pasada: entrega mañana desde las ' + formatTime(oh, om) + '.';
+    }
+  })();
+</script>

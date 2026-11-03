@@ -1,0 +1,142 @@
+---
+import Header from '../ui/organisms/Header.astro';
+import CartPanel from '../features/cart/CartPanel.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  structuredData?: Record<string, unknown>;
+  business?: {
+    identity?: { name: string; slogan?: string };
+    seo?: { title: string; description: string };
+    contact?: { phone: string; whatsapp: string; address: string };
+    hours?: { open: string; close: string; days: number[] };
+  };
+}
+
+const {
+  title,
+  description,
+  image = '/og-default.png',
+  structuredData,
+  business,
+} = Astro.props;
+
+const bizName = business?.identity?.name ?? 'Distribuidora';
+const bizSeoTitle = business?.seo?.title ?? bizName;
+const bizSeoDesc = business?.seo?.description ?? '';
+const bizPhone = business?.contact?.phone ?? '';
+const bizWhatsapp = business?.contact?.whatsapp ?? '';
+const bizAddress = business?.contact?.address ?? '';
+const bizHoursOpen = business?.hours?.open ?? '00:00';
+const bizHoursClose = business?.hours?.close ?? '23:59';
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://aguaspachacamac.pe').href;
+const fullTitle = title ?? bizSeoTitle;
+
+// Default LocalBusiness structured data (valores vacíos si no se pasa business)
+const localBusiness = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: bizName,
+  description: bizSeoDesc,
+  telephone: bizPhone,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: bizAddress,
+    addressLocality: 'Lima',
+    addressCountry: 'PE',
+  },
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    opens: bizHoursOpen,
+    closes: bizHoursClose,
+  },
+};
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:site_name" content={bizName} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Structured Data: LocalBusiness -->
+    <script type="application/ld+json" set:html={JSON.stringify(localBusiness)} />
+
+    <!-- Structured Data: page-specific -->
+    {structuredData && (
+      <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+    )}
+
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+  <body class="bg-surface text-neutral font-body">
+    <Header />
+    <main class="min-h-screen">
+      <slot />
+    </main>
+    <CartPanel />
+
+    <!-- Barra inferior móvil: resumen del carrito + WhatsApp -->
+    <div class="mobile-dock fixed bottom-0 left-0 right-0 bg-surface border-t border-neutral/20 px-4 py-2 z-50 hidden sm:flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-neutral">Carrito:</span>
+        <span id="dock-cart-count" class="font-medium text-primary">0</span>
+      </div>
+      <a href="/carrito" class="flex-1 bg-primary text-white text-center py-2 rounded-md text-sm font-medium">Ver carrito</a>
+    </div>
+
+    <!-- Botón WhatsApp flotante en escritorio -->
+    <div class="hidden sm:flex fixed bottom-6 right-6 z-50">
+      <a href="https://wa.me/51999111222" target="_blank" rel="noopener" class="bg-success text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2 text-sm font-medium">
+        💬 WhatsApp
+      </a>
+    </div>
+
+    <script>
+      import '../bootstrap';
+    </script>
+
+    <script>
+      // Contador del dock móvil — lee localStorage
+      (function () {
+        const countEl = document.getElementById('dock-cart-count');
+        if (!countEl) return;
+        const update = () => {
+          try {
+            const raw = localStorage.getItem('cart');
+            const total = raw ? JSON.parse(raw).lines?.reduce((s, l) => s + l.quantity, 0) : 0;
+            countEl.textContent = String(total);
+          } catch {
+            countEl.textContent = '0';
+          }
+        };
+        window.addEventListener('storage', update);
+        window.addEventListener('cart-updated', update);
+        update();
+        const tick = setInterval(update, 300);
+      })();
+    </script>
+  </body>
+</html>

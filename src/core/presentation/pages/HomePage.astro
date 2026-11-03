@@ -1,0 +1,264 @@
+---
+// HomePage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  business: {
+    identity?: { name: string; slogan?: string };
+    seo?: { title: string; description: string };
+    contact?: { phone: string; whatsapp: string; address: string };
+    hours?: { open: string; close: string; days: number[] };
+  };
+  mode: 'home' | 'business';
+  featured: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    available: boolean;
+    presentations: Array<{
+      id: string;
+      name: string;
+      retailPrices: { priceFor: (qty: number) => { amount: number; format: () => string } };
+      wholesalePrices: { priceFor: (qty: number) => { amount: number; format: () => string } };
+    }>;
+  }>;
+  categories: Array<{ id: string; name: string; slug: string | null; description?: string }>;
+  zones: Array<{
+    id: string;
+    name: string;
+    deliveryTime: string;
+    shippingCost: { amount: number; format: () => string };
+  }>;
+  reviews: Array<{
+    author: string;
+    text: string;
+  }>;
+  faqs: Array<{
+    question: string;
+    answer: string;
+  }>;
+  structuredData?: Record<string, unknown>;
+}
+
+const {
+  business,
+  mode,
+  featured,
+  categories,
+  zones,
+  reviews,
+  faqs,
+  structuredData,
+} = Astro.props;
+
+const topCategories = categories.filter((c: any) => !c.parentId).slice(0, 6);
+const bizName = business?.identity?.name ?? 'Distribuidora';
+const bizSeoTitle = business?.seo?.title ?? bizName;
+const bizSeoDesc = business?.seo?.description ?? '';
+const bizPhone = business?.contact?.phone ?? '';
+const bizWhatsapp = business?.contact?.whatsapp ?? '';
+const bizAddress = business?.contact?.address ?? '';
+const bizHoursOpen = business?.hours?.open ?? '00:00';
+const bizHoursClose = business?.hours?.close ?? '23:59';
+const bizDays = business?.hours?.days ?? [1, 2, 3, 4, 5, 6];
+const bizCutoff = business?.hours?.cutoff ?? '17:00';
+const title = business?.seo?.title ?? bizName;
+---
+
+<main class="min-h-screen">
+
+  <!-- Hero -->
+  <section class="bg-primary text-white py-16 px-4">
+    <div class="container mx-auto text-center">
+      <h1 class="text-section font-display mb-4">{bizSeoTitle}</h1>
+      <p class="text-lg mb-6">{bizSeoDesc}</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="/productos" class="bg-white text-primary px-6 py-3 rounded font-medium">Armar mi pedido</a>
+        <a href="/cotizar" class="border border-white text-white px-6 py-3 rounded font-medium">Solicitar cotización</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Selector ¿Cómo compras? -->
+  <section class="py-8 px-4">
+    <div class="container mx-auto">
+      <h2 class="text-section font-medium text-primary mb-6">¿Cómo compras?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          id="mode-home"
+          class={`p-4 rounded border text-center transition ${mode === 'home' ? 'bg-primary text-white border-primary' : 'bg-surface text-neutral border-neutral'}`}
+        >
+          <span class="block text-label font-medium">Para mi casa</span>
+          <span class="block text-help text-sm">Precios minoristas</span>
+        </button>
+        <button
+          id="mode-business"
+          class={`p-4 rounded border text-center transition ${mode === 'business' ? 'bg-primary text-white border-primary' : 'bg-surface text-neutral border-neutral'}`}
+        >
+          <span class="block text-label font-medium">Para mi negocio</span>
+          <span class="block text-help text-sm">Precios mayoristas</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lo más pedido -->
+  <section class="py-8 bg-neutral/5">
+    <div class="container mx-auto px-4">
+      <h2 class="text-section font-medium text-primary mb-6">Lo más pedido</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {featured.map((p: any) => {
+          const pres = p.presentations?.[0];
+          const priceList = mode === 'business' ? pres.wholesalePrices : pres.retailPrices;
+          const price = priceList.priceFor(1);
+          return (
+            <article class="border border-neutral/20 rounded-lg p-4 bg-surface">
+              <h3 class="text-label font-medium">{p.name}</h3>
+              <p class="text-help text-neutral">{pres.name}</p>
+              <div class="mt-2">
+                <span class="text-label font-medium">{price.format()}</span>
+              </div>
+              <button
+                class="flex-1 bg-primary text-white px-4 py-2 rounded font-medium mt-3"
+                data-add-to-cart
+                data-product-id={p.id}
+                data-presentation-id={pres.id}
+              >
+                Agregar
+              </button>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- Categorías -->
+  <section class="py-8">
+    <div class="container mx-auto px-4">
+      <h2 class="text-section font-medium text-primary mb-6">Categorías</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {topCategories.map((cat: any) => (
+          <article class="border border-neutral/20 rounded-lg p-5 bg-surface hover:border-primary transition">
+            <h3 class="text-label font-medium">{cat.name}</h3>
+            <p class="text-help text-sm">{cat.description ?? ''}</p>
+            <a href={`/productos/${cat.slug ?? cat.id}`} class="block mt-4 text-primary font-medium">Ver productos →</a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Beneficios -->
+  <section class="py-8 bg-neutral/5">
+    <div class="container mx-auto px-4">
+      <h2 class="text-section font-medium text-primary mb-6">Beneficios</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="text-center">
+          <div class="text-primary text-2xl font-bold mb-2">⚡</div>
+          <p class="text-neutral text-sm">Entrega rápida en tu zona</p>
+        </div>
+        <div class="text-center">
+          <div class="text-primary text-2xl font-bold mb-2">💰</div>
+          <p class="text-neutral text-sm">Precios mayoristas por volumen</p>
+        </div>
+        <div class="text-center">
+          <div class="text-primary text-2xl font-bold mb-2">💵</div>
+          <p class="text-neutral text-sm">Pago al recibir: efectivo, Yape, Plin</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cómo funciona -->
+  <section class="py-8">
+    <div class="container mx-auto px-4">
+      <h2 class="text-section font-medium text-primary mb-6">Cómo funciona</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="text-center">
+          <div class="text-primary text-2xl font-bold mb-2">1</div>
+          <p class="text-neutral text-sm">Arma tu pedido en el carrito</p>
+        </div>
+        <div class="text-center">
+          <div class="text-primary text-2xl font-bold mb-2">2</div>
+          <p class="text-neutral text-sm">Envía por WhatsApp con tu código</p>
+        </div>
+        <div class="text-center">
+          <div class="text-primary text-2xl font-bold mb-2">3</div>
+          <p class="text-neutral text-sm">Recibe y paga al domicilio</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Indicador de horario -->
+  <section class="py-8 bg-primary text-white">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-section font-display mb-4">¿Abierto ahora?</h2>
+      <p class="text-white mb-4" id="business-status">
+        Calculando horario…
+      </p>
+      <button class="bg-primary text-white px-6 py-3 rounded font-medium">Ver zonas de reparto</button>
+    </div>
+  </section>
+
+  <!-- Zonas de reparto -->
+  <section class="py-8">
+    <div class="container mx-auto px-4">
+      <h2 class="text-section font-medium text-primary mb-6">Zonas de reparto</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {zones.map((z: any) => (
+          <article class="border border-neutral/20 rounded-lg p-4 bg-surface">
+            <h3 class="text-label font-medium">{z.name}</h3>
+            <p class="text-help text-sm">{z.deliveryTime}</p>
+            <p class="text-help text-sm">Envío: {new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(z.shippingCost.amount)}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Prueba social -->
+  <section class="py-8 bg-neutral/5">
+    <div class="container mx-auto px-4">
+      <h2 class="text-section font-medium text-primary mb-6">Lo que dicen nuestros clientes</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {reviews.map((r: any) => (
+          <article class="border border-neutral/20 rounded-lg p-5 bg-surface">
+            <div class="text-warning text-sm mb-2">★★★★★</div>
+            <p class="text-neutral text-sm mb-4">"{r.text}"</p>
+            <p class="text-label font-medium text-sm">{r.author}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="py-8">
+    <div class="container mx-auto px-4">
+      <h2 class="text-section font-medium text-primary mb-6">Preguntas frecuentes</h2>
+      <div class="space-y-3">
+        {faqs.map((f: any) => (
+          <div class="border border-neutral/20 rounded-lg p-4 bg-surface">
+            <p class="text-label font-medium">{f.question}</p>
+            <p class="text-help text-sm mt-2">{f.answer}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Pie de página -->
+  <footer class="py-8 border-t border-neutral/20">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <p class="text-neutral text-sm">{bizAddress}</p>
+          <p class="text-neutral text-sm">{bizPhone} • {bizWhatsapp}</p>
+        </div>
+        <div class="flex gap-4">
+          <a href="https://wa.me/51999111222" target="_blank" rel="noopener" class="text-primary text-sm">WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</main>

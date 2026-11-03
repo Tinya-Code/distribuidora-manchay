@@ -1,0 +1,74 @@
+[
+  {
+    "id": "prod_gaseosa_500",
+    "name": "Gaseosa 500 ml",
+    "slug": "gaseosa-500-ml",
+    "category": "Personal (hasta 500 ml)",
+    "price": 0,
+    "available": true,
+    "featured": true
+  },
+  {
+    "id": "prod_gaseosa_15",
+    "name": "Gaseosa 1.5 L",
+    "slug": "gaseosa-1-5-l",
+    "category": "Familiar (1.5 L a 3 L)",
+    "price": 0,
+    "available": true,
+    "featured": false
+  },
+  {
+    "id": "prod_gaseosa_3",
+    "name": "Gaseosa 3 L",
+    "slug": "gaseosa-3-l",
+    "category": "Familiar (1.5 L a 3 L)",
+    "price": 0,
+    "available": true,
+    "featured": false
+  },
+  {
+    "id": "prod_agua_625",
+    "name": "Agua sin gas 625 ml",
+    "slug": "agua-625-ml",
+    "category": "Agua embotellada",
+    "price": 0,
+    "available": true,
+    "featured": true
+  },
+  {
+    "id": "prod_agua_gas",
+    "name": "Agua con gas 500 ml",
+    "slug": "agua-con-gas-500",
+    "category": "Agua embotellada",
+    "price": 0,
+    "available": true,
+    "featured": false
+  },
+  {
+    "id": "prod_bidon_20",
+    "name": "Bidón de agua 20 L",
+    "slug": "bidon-agua-20-litros",
+    "category": "Bidones",
+    "price": 0,
+    "available": true,
+    "featured": true
+  },
+  {
+    "id": "prod_energizante",
+    "name": "Energizante 250 ml",
+    "slug": "energizante-250-ml",
+    "category": "Energizantes",
+    "price": 0,
+    "available": true,
+    "featured": false
+  },
+  {
+    "id": "prod_pack_familiar",
+    "name": "Pack Familiar (6 gaseosas + 2 aguas)",
+    "slug": "pack-familiar",
+    "category": "Ofertas y packs",
+    "price": 0,
+    "available": true,
+    "featured": true
+  }
+]

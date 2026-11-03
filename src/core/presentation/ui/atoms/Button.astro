@@ -1,0 +1,16 @@
+---
+interface Props {
+  variant?: 'primary' | 'secondary' | 'danger';
+  type?: 'button' | 'submit';
+  [key: string]: unknown;
+}
+const { variant = 'primary', type = 'button', ...rest } = Astro.props;
+const variantClasses = {
+  primary: 'bg-primary text-white hover:opacity-90',
+  secondary: 'bg-secondary text-white hover:opacity-90',
+  danger: 'bg-danger text-white hover:opacity-90',
+};
+---
+<button type={type} class={`inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition ${variantClasses[variant as keyof typeof variantClasses]}`} {...rest}>
+  <slot />
+</button>

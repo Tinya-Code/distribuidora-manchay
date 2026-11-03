@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../../core/presentation/layouts/BaseLayout.astro';
+import SubcategoryPage from '../../../core/presentation/pages/SubcategoryPage.astro';
+import { ensureContainer } from '../../../core/composition';
+import { products, categories } from '../../../tenant/data';
+import categoriesRaw from '../../../tenant/data/categories.json';
+
+const container = ensureContainer();
+
+export function getStaticPaths() {
+  const raw = categoriesRaw as any[];
+  const paths: Array<{ params: { category: string; subcategoria: string } }> = [];
+  for (const cat of raw) {
+    if (!cat.parentId) {
+      const subcats = raw.filter((c: any) => c.parentId === cat.id);
+      for (const sub of subcats) {
+        paths.push({ params: { category: cat.slug, subcategoria: sub.slug } });
+      }
+    }
+  }
+  return paths;
+}
+
+const categorySlug = Astro.params.category as string;
+const subcategoriaSlug = Astro.params.subcategoria as string;
+const category = categories.find((c: any) => c.slug === categorySlug && !c.parentId);
+if (!category) {
+  return Astro.redirect('/404');
+}
+const subcategoria = categories.find((c: any) => c.slug === subcategoriaSlug && c.parentId === category?.id);
+if (!subcategoria) {
+  return Astro.redirect('/404');
+}
+const subcategoriaProducts = products.filter((p: any) => p.categoryId === subcategoria.id);
+
+const subcategoryStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: subcategoria.name,
+  description: subcategoria.description,
+  url: `https://aguaspachacamac.pe/productos/${category.slug}/${subcategoria.slug}`,
+};
+---
+
+<BaseLayout title={`${subcategoria.name} | ${category.name}`} business={container.business} structuredData={subcategoryStructuredData}>
+  <SubcategoryPage
+    category={{
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+    }}
+    subcategoria={{
+      id: subcategoria.id,
+      name: subcategoria.name,
+      slug: subcategoria.slug,
+      description: subcategoria.description,
+    }}
+    products={subcategoriaProducts}
+  />
+</BaseLayout>
+
+<script>
+  import { ensureContainer } from '../../../core/composition';
+  const container = ensureContainer();
+  const cartStore = container.cartStore;
+  document.querySelectorAll('button[data-add-to-cart]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      cartStore.addToCart(
+        btn.getAttribute('data-product-id')! as any,
+        btn.getAttribute('data-presentation-id')! as any,
+        1
+      );
+      window.dispatchEvent(new CustomEvent('cart-updated'));
+      const original = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = original; }, 1000);
+    });
+  });
+</script>

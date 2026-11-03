@@ -1,0 +1,84 @@
+---
+// ContactPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  business: {
+    contact?: { phone?: string; whatsapp?: string; email?: string; address?: string };
+    hours?: { open?: string; close?: string; days?: number[]; cutoff?: string };
+  };
+}
+const {
+  business,
+} = Astro.props;
+const whatsappPhone = business.contact?.whatsapp ?? '51999111222';
+const phone = business.contact?.phone ?? '999 111 222';
+const email = business.contact?.email ?? 'ventas@aguaspachacamac.pe';
+const address = business.contact?.address ?? 'Av. Ejemplo 123, Pachacámac, Lima';
+const openTime = business.hours?.open ?? '07:00';
+const closeTime = business.hours?.close ?? '19:00';
+const days = business.hours?.days ?? [1, 2, 3, 4, 5, 6];
+const cutoff = business.hours?.cutoff ?? '12:00';
+---
+
+<main class="container mx-auto px-4 py-8">
+  <h1 class="text-section font-display text-primary mb-6">Contacto</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="space-y-6">
+      <div class="border border-neutral/20 rounded-lg p-5 bg-surface">
+        <h2 class="text-label font-medium mb-3">Habla con nosotros</h2>
+        <p class="text-neutral mb-4">
+          ¿Tienes dudas sobre un producto, una zona de entrega o quieres hacer un pedido grande? Escríbenos por WhatsApp y te respondemos al instante.
+        </p>
+        <a
+          href={`https://wa.me/${whatsappPhone.replace(/\D/g, '')}`}
+          target="_blank"
+          rel="noopener"
+          class="block w-full bg-success text-white text-center px-6 py-3 rounded font-medium"
+        >
+          Escribir por WhatsApp
+        </a>
+      </div>
+
+      <div class="border border-neutral/20 rounded-lg p-5 bg-surface">
+        <h2 class="text-label font-medium mb-3">Datos de contacto</h2>
+        <ul class="space-y-3 text-neutral">
+          <li class="flex items-start gap-3">
+            <span class="text-primary">📞 Teléfono:</span> <span>{phone}</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-primary">💬 WhatsApp:</span> <span>{whatsappPhone}</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-primary">✉️ Correo:</span> <span>{email}</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-primary">📍 Dirección:</span> <span>{address}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="border border-neutral/20 rounded-lg p-5 bg-surface">
+        <h2 class="text-label font-medium mb-3">Horarios de atención</h2>
+        <ul class="space-y-2 text-neutral text-sm">
+          <li>Lunes a sábado: {openTime} a.m. - {closeTime} p.m.</li>
+          <li>Domingo: cerrado</li>
+          <li class="mt-2"><span class="font-medium">Hora de corte para entrega el mismo día:</span> {cutoff}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <div class="w-full aspect-square bg-neutral/10 rounded-lg flex items-center justify-center text-help mb-4">
+        Mapa de ubicación
+      </div>
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3978.318631122491!2d-76.8788752862626!3d-12.28612958928972!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sPachac%C3%A1mac%2C%20Lima!5e0!3m2!1ses-419!2spe!4v1699999999999!5m2!1ses-419!2spe"
+        width="100%"
+        height="300"
+        style="border:0;"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+    </div>
+  </div>
+</main>

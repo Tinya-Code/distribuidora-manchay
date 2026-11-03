@@ -1,0 +1,6 @@
+.flex { display: flex; }
+.grid { display: grid; }
+.hidden { display: none; }
+.text-muted { color: var(--color-muted); }
+.mt-2 { margin-top: var(--space-2); }
+.mt-4 { margin-top: var(--space-4); }

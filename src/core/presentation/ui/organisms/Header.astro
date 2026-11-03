@@ -1,0 +1,98 @@
+---
+---
+
+<header class="sticky top-0 z-40 bg-surface border-b border-neutral/20">
+  <div class="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+    <a href="/" class="font-display text-primary text-lg whitespace-nowrap">Aguas Pachacamac</a>
+
+    <!-- Buscador instantáneo (lee índice estático generado al publicar) -->
+    <div class="relative flex-1 max-w-md hidden md:block">
+      <input
+        type="text"
+        id="search-input"
+        class="w-full border rounded-full px-4 py-1.5 text-sm"
+        placeholder="Buscar productos…"
+        autocomplete="off"
+      />
+      <div id="search-results" class="hidden absolute top-full left-0 right-0 mt-1 bg-surface border rounded-lg shadow-lg max-h-80 overflow-y-auto z-50"></div>
+    </div>
+
+    <nav class="flex items-center gap-4">
+      <a href="/productos" class="text-sm whitespace-nowrap">Productos</a>
+      <a href="/negocios" class="text-sm whitespace-nowrap">Negocios</a>
+      <a href="/zonas" class="text-sm whitespace-nowrap">Zonas</a>
+      <a href="/contacto" class="text-sm whitespace-nowrap hidden lg:inline">Contacto</a>
+      <button type="button" id="cart-toggle" class="relative text-sm whitespace-nowrap">
+        Carrito
+        <span id="cart-count" class="ml-1 inline-flex items-center justify-center w-5 h-5 text-xs bg-primary text-white rounded-full">0</span>
+      </button>
+      <a href="https://wa.me/51999111222" target="_blank" rel="noopener" class="text-sm text-success whitespace-nowrap hidden sm:inline">WhatsApp</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  // Cart counter — reads from localStorage directly so it works across page scripts
+  const countEl = document.getElementById('cart-count');
+  const update = () => {
+    try {
+      const raw = localStorage.getItem('cart');
+      const total = raw ? JSON.parse(raw).lines?.reduce((s: number, l: any) => s + l.quantity, 0) : 0;
+      if (countEl) countEl.textContent = String(total);
+    } catch {
+      if (countEl) countEl.textContent = '0';
+    }
+  };
+  window.addEventListener('storage', update);
+  window.addEventListener('cart-updated', update);
+  update();
+  // Keep counter in sync across page navigations
+  const tick = setInterval(update, 300);
+
+  document.getElementById('cart-toggle')?.addEventListener('click', () => {
+    document.querySelector('[data-cart-panel]')?.classList.toggle('hidden');
+  });
+
+  // Instant search — lee el índice estático generado al publicar
+  const searchInput = document.getElementById('search-input');
+  const searchResults = document.getElementById('search-results');
+  let productsIndex: { id: string; name: string; slug: string; category: string; price: number; available: boolean; featured: boolean }[] = [];
+
+  fetch('/search-index.json')
+    .then((r) => r.json())
+    .then((data) => {
+      productsIndex = data ?? [];
+    })
+    .catch(() => {
+      productsIndex = [];
+    });
+
+  searchInput?.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    if (q.length < 2) {
+      searchResults?.classList.add('hidden');
+      return;
+    }
+    const matches = productsIndex.filter(
+      (p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q),
+    ).slice(0, 8);
+
+    if (matches.length === 0) {
+      searchResults.innerHTML = '<div class="px-4 py-3 text-sm text-neutral">Sin resultados</div>';
+    } else {
+      searchResults.innerHTML = matches
+        .map(
+          (p) =>
+            `<a href="/producto/${p.slug}" class="block px-4 py-2 text-sm hover:bg-neutral/10 border-b last:border-0">${p.name} <span class="text-help text-xs">(${p.category})</span></a>`,
+        )
+        .join('');
+    }
+    searchResults.classList.remove('hidden');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!searchInput?.contains(e.target) && !searchResults?.contains(e.target)) {
+      searchResults?.classList.add('hidden');
+    }
+  });
+</script>

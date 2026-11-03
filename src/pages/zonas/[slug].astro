@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../../core/presentation/layouts/BaseLayout.astro';
+import ZonePage from '../../core/presentation/pages/ZonePage.astro';
+import { ensureContainer } from '../../core/composition';
+import zonesRaw from '../../tenant/data/zones.json';
+import productsRaw from '../../tenant/data/products.json';
+
+const container = ensureContainer();
+
+export function getStaticPaths() {
+  const raw = zonesRaw as any[];
+  return raw.map((z) => ({
+    params: { slug: z.slug },
+  }));
+}
+
+const { slug } = Astro.props as any;
+const zoneRaw = (zonesRaw as any[]).find((z: any) => z.slug === slug);
+if (!zoneRaw) {
+  return Astro.redirect('/404');
+}
+
+const zone = {
+  id: zoneRaw.id,
+  name: zoneRaw.name,
+  slug: zoneRaw.slug,
+  distritos: zoneRaw.distritos ?? [],
+  shippingCost: zoneRaw.shippingCost,
+  freeShippingFrom: zoneRaw.freeShippingFrom,
+  minOrder: zoneRaw.minOrder,
+  deliveryTime: zoneRaw.deliveryTime,
+  deliveryDays: zoneRaw.deliveryDays ?? [],
+  slots: zoneRaw.slots ?? [],
+  seo: zoneRaw.seo,
+};
+
+const featuredProductsRaw = (productsRaw as any[])
+  .filter((p: any) => p.featured)
+  .slice(0, 4);
+
+const featuredProducts = featuredProductsRaw.map((p: any) => ({
+  id: p.id,
+  name: p.name,
+  slug: p.slug,
+  available: p.available ?? true,
+  presentations: p.presentations ?? [],
+}));
+
+const zoneStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: zoneRaw.seo?.title ?? `Venta de agua en ${zoneRaw.name}`,
+  description: zoneRaw.seo?.text,
+  url: `https://aguaspachacamac.pe/zonas/${zoneRaw.slug}`,
+};
+---
+
+<BaseLayout title={zoneRaw.seo?.title ?? `Venta de agua en ${zoneRaw.name}`} business={container.business} structuredData={zoneStructuredData}>
+  <ZonePage
+    zone={zone}
+    featuredProducts={featuredProducts}
+  />
+</BaseLayout>

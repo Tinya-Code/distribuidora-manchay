@@ -1,0 +1,166 @@
+---
+// ProductPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  product: any;
+  defaultPresentationId: string;
+  mode: 'home' | 'business';
+  currentPriceFormatted: string;
+  tierInfoFormatted?: { minQty: number; priceFormatted: string };
+  tierRows: Array<{ minQty: number; priceFormatted: string }>;
+  complements: Array<{ productId: string; presentationId: string; slug: string; name: string; price: string }>;
+  alternatives: Array<{ productId: string; presentationId: string; slug: string; name: string; price: string }>;
+  structuredData?: Record<string, unknown>;
+}
+const {
+  product,
+  defaultPresentationId,
+  mode,
+  currentPriceFormatted,
+  tierInfoFormatted,
+  tierRows,
+  complements,
+  alternatives,
+  structuredData,
+} = Astro.props;
+const defaultPresentation = product.presentations.find((p: any) => p.id === defaultPresentationId) ?? product.presentations[0];
+const isAvailable = product.available;
+---
+
+<main class="container mx-auto px-4 py-8">
+  <nav class="mb-6">
+    <a href="/productos" class="text-help">Catálogo</a>
+    <span class="mx-1 text-neutral">/</span>
+    <a href={`/productos/${product.categoryId}`} class="text-help">{product.categoryId}</a>
+  </nav>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Galería -->
+    <div class="space-y-4">
+      <div class="w-full aspect-square bg-surface border border-neutral/20 rounded-lg flex items-center justify-center">
+        <img src={`/img/placeholder/product-${product.slug}.svg`} alt={product.name} class="w-full h-full object-contain p-4" />
+      </div>
+      {product.images?.slice(1).map((img: string) => (
+        <div class="w-16 h-16 bg-surface border border-neutral/20 rounded cursor-pointer">
+          <img src={`/img/placeholder/product-${product.slug}.svg`} alt={product.name} class="w-full h-full object-cover" />
+        </div>
+      ))}
+    </div>
+
+    <!-- Detalle -->
+    <div class="space-y-4">
+      <h1 class="text-section font-display text-primary">{product.name}</h1>
+      <p class="text-help">{product.description}</p>
+
+      <!-- Selector de presentación -->
+      <div class="border rounded-lg p-4">
+        <p class="text-label font-medium mb-3">Presentación</p>
+        <div class="flex flex-col sm:flex-row gap-2">
+          {product.presentations.map((pres: any) => {
+            const pl = mode === 'business' ? pres.wholesalePrices : pres.retailPrices;
+            const p = pl.priceFor(1);
+            return (
+              <label class="flex items-center gap-3 p-3 border rounded hover:border-primary cursor-pointer">
+                <input type="radio" name="presentation" value={pres.id} class="w-4 h-4" />
+                <span class="flex-1">
+                  <span class="text-label font-medium">{pres.name}</span>
+                  <span class="block text-help">{pres.unidadesPorPresentacion} unidad(es)</span>
+                </span>
+                <span class="text-primary font-medium">{p.format()}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <!-- Tabla de precios por volumen -->
+      <div class="border rounded-lg p-4">
+        <p class="text-label font-medium mb-3">Precios por volumen</p>
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b">
+              <th class="pb-2 text-help">Cantidad</th>
+              <th class="pb-2 text-help right">Precio c/u</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tierRows.map((tier) => (
+              <tr class="border-b last:border-0">
+                <td class="py-2">{tier.minQty}+</td>
+                <td class="py-2 text-right">{tier.priceFormatted}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Aviso de tramo -->
+      {tierInfoFormatted && (
+        <div class="bg-accent/10 border border-accent/20 rounded p-3 text-accent-text text-sm">
+          Lleva <strong>{tierInfoFormatted.minQty}</strong> y paga <strong>{tierInfoFormatted.priceFormatted} c/u</strong>.
+        </div>
+      )}
+
+      <!-- Envase retornable -->
+      {product.returnable && (
+        <div class="bg-surface border border-neutral/20 rounded p-3 text-sm">
+          <span class="text-help">Envase retornable:</span>
+          <span class="text-primary font-medium">{product.envase?.canje ?? 'Canje disponible'}</span>
+        </div>
+      )}
+
+      <!-- Disponibilidad -->
+      {!isAvailable && (
+        <div class="text-danger text-sm font-medium">No disponible</div>
+      )}
+
+      {isAvailable && (
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button class="flex-1 bg-primary text-white px-4 py-2 rounded font-medium" data-add-to-cart data-product-id={product.id} data-presentation-id={defaultPresentationId}>
+            Agregar al carrito
+          </button>
+          <button class="flex-1 bg-secondary text-white px-4 py-2 rounded font-medium" data-whatsapp-product data-product-id={product.id}>
+            Pedir por WhatsApp
+          </button>
+        </div>
+      )}
+
+      <!-- Se compra junto con (complementarios) -->
+      {complements.length > 0 && (
+        <div class="border border-neutral/20 rounded-lg p-4 bg-surface mt-6">
+          <h3 class="text-label font-medium mb-3">Se compra junto con</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {complements.map((cp) => (
+              <article key={cp.productId} class="border border-neutral/20 rounded-lg p-3 bg-surface text-center">
+                <img src={`/img/placeholder/product-${cp.slug}.svg`} alt={cp.name} class="w-16 h-16 mx-auto mb-2 object-contain" />
+                <p class="text-label font-medium text-sm">{cp.name}</p>
+                <p class="text-help text-xs">{cp.price}</p>
+                <button class="w-full mt-2 text-xs py-1 bg-secondary text-white rounded" data-add-to-cart data-product-id={cp.productId} data-presentation-id={cp.presentationId}>
+                  Agregar
+                </button>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- Alternativas -->
+      {alternatives.length > 0 && (
+        <div class="border border-neutral/20 rounded-lg p-4 bg-surface mt-6">
+          <h3 class="text-label font-medium mb-3">Alternativas</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {alternatives.map((ap) => (
+              <article key={ap.productId} class="border border-neutral/20 rounded-lg p-3 bg-surface text-center">
+                <img src={`/img/placeholder/product-${ap.slug}.svg`} alt={ap.name} class="w-16 h-16 mx-auto mb-2 object-contain" />
+                <p class="text-label font-medium text-sm">{ap.name}</p>
+                <p class="text-help text-xs">{ap.price}</p>
+                <button class="w-full mt-2 text-xs py-1 bg-secondary text-white rounded" data-add-to-cart data-product-id={ap.productId} data-presentation-id={ap.presentationId}>
+                  Agregar
+                </button>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</main>

@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../../core/presentation/layouts/BaseLayout.astro';
+import SegmentPage from '../../core/presentation/pages/SegmentPage.astro';
+import { ensureContainer } from '../../core/composition';
+import segmentsRaw from '../../tenant/data/segments.json';
+import productsRaw from '../../tenant/data/products.json';
+
+const container = ensureContainer();
+
+export function getStaticPaths() {
+  const raw = segmentsRaw as any[];
+  return raw.map((s) => ({
+    params: { slug: s.slug },
+  }));
+}
+
+const { slug } = Astro.props as any;
+const segmentRaw = (segmentsRaw as any[]).find((s: any) => s.slug === slug);
+if (!segmentRaw) {
+  return Astro.redirect('/404');
+}
+
+const segment = {
+  id: segmentRaw.id,
+  name: segmentRaw.name,
+  slug: segmentRaw.slug,
+  title: segmentRaw.title ?? segmentRaw.name,
+  text: segmentRaw.text,
+  suggestedProducts: segmentRaw.suggestedProducts ?? [],
+  calculator: segmentRaw.calculator,
+};
+
+const productsRawArray = productsRaw as any[];
+const products = productsRawArray.map((p: any) => ({
+  id: p.id,
+  name: p.name,
+  slug: p.slug,
+  available: p.available ?? true,
+  presentations: p.presentations ?? [],
+}));
+
+const segmentStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: segmentRaw.seo?.title ?? `Distribuidor de agua y gaseosas para ${segmentRaw.name}`,
+  description: segmentRaw.seo?.text,
+  url: `https://aguaspachacamac.pe/negocios/${segmentRaw.slug}`,
+};
+---
+
+<BaseLayout title={segmentRaw.seo?.title ?? `Distribuidor de agua y gaseosas para ${segmentRaw.name}`} business={container.business} structuredData={segmentStructuredData}>
+  <SegmentPage
+    segment={segment}
+    products={products}
+  />
+</BaseLayout>

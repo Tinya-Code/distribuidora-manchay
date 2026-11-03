@@ -1,0 +1,155 @@
+---
+// BusinessPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  segments: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    title?: string;
+    text?: string;
+  }>;
+  products: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    categoryId: string;
+    available: boolean;
+    presentations: Array<{
+      id: string;
+      name: string;
+    }>;
+  }>;
+  categories: Array<{ id: string; name: string; parentId: string | null }>;
+}
+const {
+  segments,
+  products,
+  categories,
+} = Astro.props;
+const topCategories = categories.filter((c: any) => !c.parentId);
+const availableProducts = products.filter((p: any) => p.available);
+---
+
+<main class="container mx-auto px-4 py-8">
+  <h1 class="text-section font-display text-primary mb-6">Distribuidor de agua y gaseosas para negocios</h1>
+  <p class="text-neutral mb-8">Surtido completo para reponer toda la semana. Precios mayoristas y entrega a domicilio.</p>
+
+  <!-- Segmentos -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    {segments.map((s: any) => (
+      <article class="border border-neutral/20 rounded-lg p-5 bg-surface hover:border-primary transition">
+        <h2 class="text-label font-medium mb-2">{s.name}</h2>
+        <p class="text-help text-sm mb-4">{s.text}</p>
+        <a href={`/negocios/${s.slug}`} class="block w-full text-center bg-surface border border-primary text-primary text-sm px-3 py-2 rounded">
+          Ver productos →
+        </a>
+      </article>
+    ))}
+  </div>
+
+  <!-- Pedido rápido en tabla -->
+  <div class="mt-10 border-t pt-8">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-section font-medium text-primary">Pedido rápido</h2>
+        <p class="text-help text-neutral">Todos los productos en una tabla. Escribe la cantidad y agrégalos de una.</p>
+      </div>
+      <button class="hidden" id="btn-add-all">Agregar seleccionados al carrito</button>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-4">
+      <select id="qo-category" class="border rounded px-3 py-2 text-sm">
+        <option value="all">Todas las categorías</option>
+        {topCategories.map((c: any) => (
+          <option value={c.id}>{c.name}</option>
+        ))}
+      </select>
+      <input type="text" id="qo-search" class="border rounded px-3 py-2 text-sm flex-1 min-w-40" placeholder="Buscar producto…" />
+    </div>
+
+    <div class="overflow-x-auto border rounded-lg">
+      <table class="w-full text-sm" id="qo-table">
+        <thead class="bg-neutral/5">
+          <tr class="border-b">
+            <th class="text-left px-3 py-2 font-medium">Producto</th>
+            <th class="text-left px-3 py-2 font-medium">Presentación</th>
+            <th class="text-right px-3 py-2 font-medium">Precio c/u</th>
+            <th class="text-center px-3 py-2 font-medium w-28">Cantidad</th>
+            <th class="text-center px-3 py-2 font-medium w-20">✓</th>
+          </tr>
+        </thead>
+        <tbody id="qo-body">
+          {availableProducts.map((p: any) => {
+            const pres = p.presentations?.[0];
+            const price = pres?.retailPrices?.priceFor?.(1)?.format?.() ?? '';
+            return (
+              <tr class="border-b last:border-0 hover:bg-neutral/5" data-product-id={p.id} data-category-id={p.categoryId}>
+                <td class="px-3 py-2">{p.name}</td>
+                <td class="px-3 py-2 text-neutral">{pres?.name ?? ''}</td>
+                <td class="px-3 py-2 text-right font-medium">{price}</td>
+                <td class="px-3 py-2 text-center">
+                  <input
+                    type="number"
+                    min="0"
+                    value="0"
+                    data-qty
+                    class="w-16 border rounded px-2 py-1 text-center"
+                  />
+                </td>
+                <td class="px-3 py-2 text-center">
+                  <input type="checkbox" data-check class="w-4 h-4" />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 flex items-center justify-between">
+      <p class="text-help text-neutral" id="qo-summary">0 productos seleccionados</p>
+      <div class="flex gap-3">
+        <button class="bg-secondary text-white px-4 py-2 rounded font-medium" id="btn-qo-clear">Limpiar</button>
+        <button class="bg-primary text-white px-4 py-2 rounded font-medium" id="btn-qo-add">Agregar al carrito</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calculadora de consumo -->
+  <div class="mt-10 border-t pt-8">
+    <h2 class="text-section font-medium text-primary mb-4">Calculadora de consumo</h2>
+    <p class="text-neutral mb-4">Indica el tipo y tamaño de tu negocio y te proponemos una lista de compra.</p>
+    <div class="border border-neutral/20 rounded-lg p-4 bg-surface">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-label font-medium mb-1">Tipo de negocio</label>
+          <select id="calc-type" class="w-full border rounded px-3 py-2">
+            <option value="bodega">Bodega</option>
+            <option value="restaurante">Restaurante / Pollería</option>
+            <option value="oficina">Oficina</option>
+            <option value="evento">Evento / Fiesta</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-label font-medium mb-1">Tamaño</label>
+          <select id="calc-size" class="w-full border rounded px-3 py-2">
+            <option value="small">Pequeño</option>
+            <option value="medium">Mediano</option>
+            <option value="large">Grande</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button class="bg-primary text-white px-6 py-3 rounded font-medium" id="btn-calc">Calcular lista de compra</button>
+        </div>
+      </div>
+
+      <div id="calc-result" class="hidden mt-6 border-t pt-4">
+        <h3 class="text-label font-medium mb-3">Lista de compra sugerida</h3>
+        <div id="calc-list" class="space-y-2"></div>
+        <div class="mt-4 flex gap-3">
+          <button class="bg-primary text-white px-6 py-3 rounded font-medium" id="btn-calc-add">Cargar todo al carrito</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>

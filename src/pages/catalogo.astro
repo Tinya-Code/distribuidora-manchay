@@ -1,0 +1,287 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import CatalogPage from '../core/presentation/pages/CatalogPage.astro';
+import { ensureContainer } from '../core/composition';
+import { products, categories, brands } from '../tenant/data';
+import { PricingMode } from '../core/domain';
+
+const container = ensureContainer();
+const pricingMode = container.pricingModeStore.get() as PricingMode;
+
+const catalogProducts = container.catalog.products();
+---
+
+<BaseLayout title="Catálogo" business={container.business}><CatalogPage
+  products={catalogProducts}
+  categories={categories as any[]}
+  brands={brands as any[]}
+  pricingMode={pricingMode}
+></CatalogPage></BaseLayout>
+
+<script>
+  import { ensureContainer } from '../core/composition';
+  import { PricingMode } from '../core/domain';
+
+  const container = ensureContainer();
+  const pricingModeStore = container.pricingModeStore;
+  const cartStore = container.cartStore;
+
+  const modeHome = document.getElementById('mode-toggle');
+  const modeBusiness = document.getElementById('mode-toggle-business');
+  const filterCat = document.getElementById('filter-category');
+  const filterSub = document.getElementById('filter-subcategory');
+  const filterBrand = document.getElementById('filter-brand');
+  const cbAvailable = document.getElementById('cb-available');
+  const sortOrder = document.getElementById('sort-order');
+  const viewGrid = document.getElementById('view-grid');
+  const viewTable = document.getElementById('view-table');
+  const productGrid = document.getElementById('product-grid');
+  const productTable = document.getElementById('product-table');
+  const productTableBody = document.getElementById('product-table-body');
+  const productContainer = document.getElementById('product-container');
+
+  const chips = {
+    tamano500: document.getElementById('chip-tamano-500'),
+    tamano15: document.getElementById('chip-tamano-15'),
+    envaseRetornable: document.getElementById('chip-envase-retornable'),
+    oferta: document.getElementById('chip-oferta'),
+    clear: document.getElementById('chip-clear'),
+  };
+
+  let currentMode = container.pricingModeStore.get() as 'home' | 'business';
+  let activeFilters = new Set();
+
+  function setMode(mode: 'home' | 'business') {
+    currentMode = mode;
+    pricingModeStore.setMode(mode);
+    modeHome!.className = `px-3 py-1 rounded border font-medium text-sm transition ${mode === 'home' ? 'bg-primary text-white' : 'bg-surface text-neutral border-neutral'}`;
+    modeBusiness!.className = `px-3 py-1 rounded border font-medium text-sm transition ${mode === 'business' ? 'bg-primary text-white' : 'bg-surface text-neutral border-neutral'}`;
+    render();
+  }
+
+  modeHome?.addEventListener('click', () => setMode('home'));
+  modeBusiness?.addEventListener('click', () => setMode('business'));
+
+  // Mostrar/ocultar subcategoría según categoría
+  filterCat?.addEventListener('change', () => {
+    const catId = filterCat.value;
+    if (catId === 'all') {
+      filterSub?.classList.add('hidden');
+      filterSub.value = 'all';
+    } else {
+      filterSub?.classList.remove('hidden');
+    }
+    render();
+  });
+
+  function getAllProducts() {
+    return container.catalog.products();
+  }
+
+  function priceFor(p: any, mode: 'home' | 'business', qty: number) {
+    const pres = p.presentations?.[0];
+    if (!pres) return { amount: 0, format: () => 'S/ 0.00' };
+    const priceList = mode === 'business' ? pres.wholesalePrices : pres.retailPrices;
+    return priceList.priceFor(qty);
+  }
+
+  function render() {
+    const catValue = filterCat.value;
+    const subValue = filterSub.value;
+    const brandValue = filterBrand.value;
+    const availableOnly = cbAvailable.checked;
+    const sort = sortOrder.value;
+    const viewTableMode = productTable.classList.contains('hidden') === false;
+
+    const all = getAllProducts();
+    let filtered = all.filter((p: any) => {
+      if (catValue !== 'all' && p.categoryId !== catValue) return false;
+      if (subValue !== 'all' && p.categoryId !== subValue) return false;
+      if (brandValue !== 'all' && p.brandId !== brandValue) return false;
+      if (availableOnly && !p.available) return false;
+
+      // Filtros rápidos de atributos (chips)
+      const raw = container.catalog.products().find((r: any) => r.id === p.id);
+      if (activeFilters.has('tamano-500')) {
+        if (!raw || (raw.attributes?.tamano ?? '').toLowerCase().includes('500 ml') === false) return false;
+      }
+      if (activeFilters.has('tamano-1-5l')) {
+        if (!raw || (raw.attributes?.tamano ?? '').toLowerCase().includes('1.5 l') === false) return false;
+      }
+      if (activeFilters.has('envase-retornable')) {
+        if (!raw || raw.returnable !== true) return false;
+      }
+      if (activeFilters.has('oferta')) {
+        if (!raw || !raw.tags?.includes('oferta')) return false;
+      }
+
+      return true;
+    });
+
+    // Orden
+    filtered.sort((a: any, b: any) => {
+      if (sort === 'featured') {
+        const ra = container.catalog.products().find((r: any) => r.id === a.id);
+        const rb = container.catalog.products().find((r: any) => r.id === b.id);
+        const fa = ra?.tags?.includes('mas-pedido') ? 0 : 1;
+        const fb = rb?.tags?.includes('mas-pedido') ? 0 : 1;
+        if (fa !== fb) return fa - fb;
+        return a.name.localeCompare(b.name);
+      }
+      if (sort === 'name') return a.name.localeCompare(b.name);
+      const pa = priceFor(a, currentMode, 1);
+      const pb = priceFor(b, currentMode, 1);
+      const va = pa.amount;
+      const vb = pb.amount;
+      if (sort === 'price-asc') return va - vb;
+      return vb - va;
+    });
+
+    if (viewTableMode) {
+      renderTable(filtered);
+    } else {
+      renderGrid(filtered);
+    }
+  }
+
+  function renderGrid(filtered: any[]) {
+    productGrid!.innerHTML = filtered.map((p: any) => {
+      const pres = p.presentations[0];
+      const price = priceFor(p, currentMode, 1);
+      const priceList = currentMode === 'business' ? pres.wholesalePrices : pres.retailPrices;
+      const next = priceList.nextTier(1);
+      return `
+        <article class="product-card border border-neutral/20 rounded-lg p-4 bg-surface ${!p.available ? 'opacity-50' : ''}" data-product-id="${p.id}" data-presentation-id="${pres.id}">
+          <img src="/img/placeholder/product-${p.slug}.svg" alt="${p.name}" class="w-full h-32 object-contain mb-2" />
+          <h3 class="text-label font-medium">${p.name}</h3>
+          <p class="text-help text-neutral text-sm">${pres.name}</p>
+          <div class="mt-2">
+            <span class="text-label font-medium">${price.format()}</span>
+            ${next ? `<span class="text-help text-xs ml-2">Lleva ${next.minQty} = ${next.price.format()} c/u</span>` : ''}
+          </div>
+          ${!p.available ? '<span class="block text-danger text-xs mt-1">No disponible</span>' : ''}
+          <div class="mt-3 flex gap-2">
+            <div class="flex-1">
+              <label class="text-xs text-neutral block mb-1">Cantidad</label>
+              <input type="number" min="1" value="1" class="w-full border rounded px-2 py-1 text-center text-sm" data-qty />
+            </div>
+            <button class="flex-1 bg-primary text-white px-4 py-2 rounded font-medium" data-add-to-cart data-product-id="${p.id}" data-presentation-id="${pres.id}" ${!p.available ? 'disabled' : ''}>
+              Agregar
+            </button>
+            <button class="flex-1 bg-secondary text-white px-4 py-2 rounded font-medium" data-whatsapp-product data-product-id="${p.id}" ${!p.available ? 'disabled' : ''}>
+              WhatsApp
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    wireGridButtons();
+  }
+
+  function renderTable(filtered: any[]) {
+    productTableBody!.innerHTML = filtered.map((p: any) => {
+      const pres = p.presentations[0];
+      const price = priceFor(p, currentMode, 1);
+      return `
+        <tr class="border-b last:border-0" data-product-id="${p.id}" data-presentation-id="${pres.id}">
+          <td class="px-3 py-2">${p.name}</td>
+          <td class="px-3 py-2">${pres.name}</td>
+          <td class="px-3 py-2 text-right">${price.format()}</td>
+          <td class="px-3 py-2 text-center"><input type="number" min="1" value="1" class="w-16 border rounded px-2 text-center" data-qty /></td>
+          <td class="px-3 py-2 text-center">
+            <button class="bg-primary text-white px-3 py-1 rounded text-sm" data-add-to-cart data-product-id="${p.id}" data-presentation-id="${pres.id}" ${!p.available ? 'disabled' : ''}>Agregar</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    wireTableButtons();
+  }
+
+  function wireGridButtons() {
+    productGrid!.querySelectorAll('button[data-add-to-cart]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const row = target.closest('[data-product-id]') as HTMLElement;
+        const qtyInput = row?.querySelector('[data-qty]') as HTMLInputElement;
+        const qty = qtyInput ? parseInt(qtyInput.value, 10) || 1 : 1;
+        cartStore.addToCart(target.getAttribute('data-product-id')! as any, target.getAttribute('data-presentation-id')! as any, qty);
+        window.dispatchEvent(new CustomEvent('cart-updated'));
+        const original = target.textContent;
+        target.textContent = '✓';
+        target.classList.add('bg-success');
+        setTimeout(() => {
+          target.textContent = original;
+          target.classList.remove('bg-success');
+        }, 1000);
+      });
+    });
+    productGrid!.querySelectorAll('button[data-whatsapp-product]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const p = container.catalog.products().find((x: any) => x.id === target.getAttribute('data-product-id'))!;
+        const pres = p.presentations[0];
+        const pl = currentMode === 'business' ? pres.wholesalePrices : pres.retailPrices;
+        const price = pl.priceFor(1);
+        const msg = `Hola, quiero pedir este producto:\n• ${p.name} · ${pres.name} = ${price.format()}`;
+        window.open(`https://wa.me/${container.business.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`);
+      });
+    });
+  }
+
+  function wireTableButtons() {
+    productTableBody!.querySelectorAll('button[data-add-to-cart]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const row = target.closest('tr') as HTMLElement;
+        const qtyInput = row?.querySelector('[data-qty]') as HTMLInputElement;
+        const qty = qtyInput ? parseInt(qtyInput.value, 10) || 1 : 1;
+        cartStore.addToCart(target.getAttribute('data-product-id')! as any, target.getAttribute('data-presentation-id')! as any, qty);
+        window.dispatchEvent(new CustomEvent('cart-updated'));
+      });
+    });
+  }
+
+  // Chips de filtro rápido
+  function toggleChip(key: string) {
+    if (activeFilters.has(key)) activeFilters.delete(key);
+    else activeFilters.add(key);
+    updateChipUI();
+    render();
+  }
+  function updateChipUI() {
+    for (const [key, el] of Object.entries(chips)) {
+      if (!el) continue;
+      const active = activeFilters.has(key);
+      el.className = `chip px-2 py-1 border rounded-full text-xs ${active ? 'bg-primary text-white border-primary' : 'bg-surface text-neutral border-neutral'}`;
+    }
+  }
+  chips.tamano500?.addEventListener('click', () => toggleChip('tamano-500'));
+  chips.tamano15?.addEventListener('click', () => toggleChip('tamano-1-5l'));
+  chips.envaseRetornable?.addEventListener('click', () => toggleChip('envase-retornable'));
+  chips.oferta?.addEventListener('click', () => toggleChip('oferta'));
+  chips.clear?.addEventListener('click', () => {
+    activeFilters.clear();
+    updateChipUI();
+    render();
+  });
+
+  viewGrid?.addEventListener('click', () => {
+    productGrid!.classList.remove('hidden');
+    productTable!.classList.add('hidden');
+    render();
+  });
+  viewTable?.addEventListener('click', () => {
+    productTable!.classList.remove('hidden');
+    productGrid!.classList.add('hidden');
+    render();
+  });
+
+  filterSub?.addEventListener('change', render);
+  filterBrand?.addEventListener('change', render);
+  cbAvailable?.addEventListener('change', render);
+  sortOrder?.addEventListener('change', render);
+
+  // Wire initial SSR-rendered buttons
+  render();
+</script>

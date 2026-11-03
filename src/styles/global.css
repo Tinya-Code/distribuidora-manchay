@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colores */
+  --color-primary: #1d69f0;
+  --color-secondary: #21a7a5;
+  --color-accent: #f59e0b;
+  --color-neutral: #6b7280;
+  --color-danger: #dc2626;
+  --color-success: #0f766e;
+
+  /* Superficie */
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #ffffff;
+
+  /* Variantes de texto */
+  --color-accent-text: #92400e;
+
+  /* Escala tipográfica */
+  --text-section: 18px;
+  --text-section--line-height: 1.75rem;
+  --text-label: 14px;
+  --text-label--line-height: 1.25rem;
+  --text-help: 12px;
+  --text-help--line-height: 1rem;
+
+  /* Tipografía */
+  --font-body:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --default-font-family: var(--font-body);
+}
+
+/* Modo oscuro */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-surface-sunken: #0e1014;
+  --color-surface: #16191f;
+  --color-surface-raised: #1e222a;
+  --color-neutral: #9ca3af;
+  --color-primary: #6ea8ff;
+  --color-danger: #f87171;
+  --color-success: #34d399;
+  --color-accent: #fbbf24;
+  --color-secondary: #5eead4;
+  --color-accent-text: #fbbf24;
+}

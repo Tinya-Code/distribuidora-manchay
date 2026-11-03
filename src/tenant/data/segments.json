@@ -1,0 +1,43 @@
+[
+  {
+    "id": "seg_bodegas",
+    "name": "Bodegas",
+    "slug": "bodegas",
+    "title": "Distribuidor de agua y gaseosas para bodegas",
+    "text": "Surtido completo para reponer toda la semana.",
+    "suggestedProducts": ["prod_gaseosa_500", "prod_gaseosa_15", "prod_bidon_20"],
+    "calculator": {
+      "sizes": [
+        { "name": "Bodega pequeña", "suggestion": [{ "productId": "prod_gaseosa_500", "presentationId": "pres_gaseosa_500_paquete12", "quantity": 5 }] },
+        { "name": "Bodega grande", "suggestion": [{ "productId": "prod_gaseosa_500", "presentationId": "pres_gaseosa_500_paquete12", "quantity": 15 }] }
+      ]
+    }
+  },
+  {
+    "id": "seg_restaurantes",
+    "name": "Restaurantes",
+    "slug": "restaurantes",
+    "title": "Agua y gaseosas para restaurantes",
+    "text": "Bebidas para tu carta y tu cocina.",
+    "suggestedProducts": ["prod_agua_625", "prod_gaseosa_15", "prod_bidon_20"],
+    "calculator": { "sizes": [{ "name": "Restaurante pequeño", "suggestion": [{ "productId": "prod_agua_625", "presentationId": "pres_agua_625_paquete6", "quantity": 5 }] }] }
+  },
+  {
+    "id": "seg_oficinas",
+    "name": "Oficinas",
+    "slug": "oficinas",
+    "title": "Agua para oficinas",
+    "text": "Bidones y botellas para tu equipo.",
+    "suggestedProducts": ["prod_bidon_20", "prod_agua_625"],
+    "calculator": { "sizes": [{ "name": "Oficina pequeña", "suggestion": [{ "productId": "prod_bidon_20", "presentationId": "pres_bidon_20_unidad", "quantity": 2 }] }] }
+  },
+  {
+    "id": "seg_eventos",
+    "name": "Eventos",
+    "slug": "eventos",
+    "title": "Bebidas para eventos",
+    "text": "Cotización personalizada para tu evento.",
+    "suggestedProducts": ["prod_gaseosa_500", "prod_agua_625", "prod_pack_familiar"],
+    "calculator": { "sizes": [{ "name": "Evento pequeño", "suggestion": [{ "productId": "prod_pack_familiar", "presentationId": "pres_pack_familiar_unidad", "quantity": 3 }] }] }
+  }
+]

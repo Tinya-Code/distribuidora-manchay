@@ -1,0 +1,78 @@
+---
+// SubcategoryPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  category: {
+    id: string;
+    name: string;
+    slug: string | null;
+  };
+  subcategoria: {
+    id: string;
+    name: string;
+    slug: string | null;
+    description?: string;
+  };
+  products: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    categoryId: string;
+    descriptions?: { short?: string };
+    presentations: Array<{
+      id: string;
+      retailPrices: { priceFor: (qty: number) => { amount: number; format: () => string } };
+    }>;
+  }>;
+  structuredData?: Record<string, unknown>;
+}
+const {
+  category,
+  subcategoria,
+  products,
+  structuredData,
+} = Astro.props;
+const shortDesc = (p: any) => p.descriptions?.short ?? p.descripcion ?? '';
+const unitPrice = (p: any) => p.presentations?.[0]?.retailPrices?.priceFor?.(1)?.amount ?? 0;
+const presentationId = (p: any) => p.presentations?.[0]?.id;
+const subcategoriaName = subcategoria?.name ?? 'Subcategoría';
+const categoriaName = category?.name ?? '';
+---
+
+<main class="container mx-auto px-4 py-8">
+  <nav class="mb-6">
+    <a href="/productos" class="text-help">Catálogo</a>
+    <span class="mx-1 text-neutral">/</span>
+    <a href={`/productos/${category?.slug}`} class="text-help">{categoriaName}</a>
+    <span class="mx-1 text-neutral">/</span>
+    <span class="text-section font-medium">{subcategoriaName}</span>
+  </nav>
+
+  <h1 class="text-section font-display text-primary mb-4">{subcategoriaName}</h1>
+  <p class="text-help mb-6">{subcategoria?.description ?? ''}</p>
+
+  {products.length === 0 ? (
+    <p class="text-neutral">No hay productos en esta subcategoría todavía.</p>
+  ) : (
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {products.map((p: any) => (
+        <article class="border border-neutral/20 rounded-lg p-4 bg-surface">
+          <h3 class="text-label font-medium">{p.name}</h3>
+          <p class="text-help text-neutral">{shortDesc(p)}</p>
+          <div class="mt-2">
+            <span class="text-label font-medium">{unitPrice(p).format()}</span>
+          </div>
+          <div class="mt-3">
+            <button
+              class="flex-1 bg-primary text-white px-4 py-2 rounded font-medium"
+              data-add-to-cart
+              data-product-id={p.id}
+              data-presentation-id={presentationId(p)}
+            >
+              Agregar
+            </button>
+          </div>
+        </article>
+      ))}
+    </div>
+  )}
+</main>

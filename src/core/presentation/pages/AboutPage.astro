@@ -1,0 +1,49 @@
+---
+// AboutPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  businessName: string;
+  slogan?: string;
+}
+const {
+  businessName = 'Distribuidora',
+  slogan,
+} = Astro.props;
+---
+
+<main class="container mx-auto px-4 py-8">
+  <h1 class="text-section font-display text-primary mb-6">Quiénes somos</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+    <div class="space-y-4">
+      <p class="text-neutral">
+        Somos {businessName}, una empresa familiar con más de 10 años llevando agua y gaseosas a hogares y negocios de Pachacámac, Manchay y Villa El Salvador.
+      </p>
+      <p class="text-neutral">
+        Trabajamos con las mejores marcas y precios mayoristas, con entrega a domicilio y pago al recibir.
+      </p>
+      <button
+        class="bg-primary text-white px-6 py-3 rounded font-medium w-full"
+        onclick={() => window.location.href='/productos'}
+      >
+        Ver catálogo
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div class="w-full aspect-square bg-neutral/10 rounded-lg flex items-center justify-center text-help">
+        Almacén y reparto
+      </div>
+      <div class="w-full aspect-square bg-neutral/10 rounded-lg flex items-center justify-center text-help">
+        Nuestro equipo de reparto
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-12 border-t pt-8">
+    <h2 class="text-section font-medium text-primary mb-4">Nuestro compromiso</h2>
+    <ul class="list-disc list-inside text-neutral space-y-2">
+      <li>Precios por volumen para hogares y negocios</li>
+      <li>Entrega en el mismo día o 24 horas según zona</li>
+      <li>Pago al recibir: efectivo, Yape, Plin o transferencia</li>
+      <li>Bidones retornables con canje</li>
+    </ul>
+  </div>
+</main>

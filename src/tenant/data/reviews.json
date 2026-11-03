@@ -1,0 +1,5 @@
+[
+  { "id": "res_001", "author": "María Q.", "segment": "hogar", "text": "Llega rápido y siempre puntual. Recomendado.", "rating": 5 },
+  { "id": "res_002", "author": "Juan T.", "segment": "negocio", "text": "Buenos precios por mayor y atención rápida por WhatsApp.", "rating": 5 },
+  { "id": "res_003", "author": "Rosa P.", "segment": "negocio", "text": "El bidón siempre llega lleno y a tiempo.", "rating": 4 }
+]

@@ -1,0 +1,108 @@
+---
+// QuotePage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  zones: Array<{ id: string; name: string }>;
+  products: Array<{ id: string; name: string }>;
+  structuredData?: Record<string, unknown>;
+}
+const {
+  zones,
+  products,
+  structuredData,
+} = Astro.props;
+---
+
+<main class="container mx-auto px-4 py-8 max-w-2xl">
+  <h1 class="text-section font-display text-primary mb-2">Solicitar cotización</h1>
+  <p class="text-neutral mb-6">
+    Cuéntanos qué necesitas y te enviamos una cotización por WhatsApp con precios personalizados.
+  </p>
+
+  <form id="quote-form" class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-label font-medium mb-1">Nombre y apellidos <span class="text-danger">*</span></label>
+        <input type="text" name="customerName" required class="w-full border rounded px-3 py-2" placeholder="Juan Pérez" />
+      </div>
+      <div>
+        <label class="block text-label font-medium mb-1">Teléfono <span class="text-danger">*</span></label>
+        <input type="tel" name="customerPhone" required class="w-full border rounded px-3 py-2" placeholder="999 111 222" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-label font-medium mb-1">Tipo de negocio</label>
+        <select name="businessType" class="w-full border rounded px-3 py-2">
+          <option value="">Selecciona…</option>
+          <option value="bodega">Bodega</option>
+          <option value="restaurante">Restaurante / Pollería</option>
+          <option value="oficina">Oficina</option>
+          <option value="evento">Evento / Fiesta</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-label font-medium mb-1">Nombre del negocio</label>
+        <input type="text" name="businessName" class="w-full border rounded px-3 py-2" placeholder="Opcional" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-label font-medium mb-1">Consumo aproximado</label>
+        <select name="consumption" class="w-full border rounded px-3 py-2">
+          <option value="">Selecciona…</option>
+          <option value="bajo">Bajo (1-10 unidades/semana)</option>
+          <option value="medio">Medio (11-30 unidades/semana)</option>
+          <option value="alto">Alto (31-100 unidades/semana)</option>
+          <option value="muy-alto">Muy alto (+100 unidades/semana)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-label font-medium mb-1">Zona de entrega</label>
+        <select name="zoneId" class="w-full border rounded px-3 py-2">
+          {zones.map((z: any) => `<option value="${z.id}">${z.name}</option>`)}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-label font-medium mb-2">Productos de interés</label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded p-3">
+        {products.map((p: any) => (
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="products" value={p.id} class="w-4 h-4" />
+            <span>{p.name}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-label font-medium mb-1">Mensaje / detalles</label>
+      <textarea name="notes" rows="4" class="w-full border rounded px-3 py-2" placeholder="Cuéntanos más sobre lo que necesitas…"></textarea>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button variant="primary" type="submit" class="flex-1 bg-primary text-white px-4 py-2 rounded font-medium">
+        Enviar cotización por WhatsApp
+      </button>
+    </div>
+  </form>
+
+  <!-- Pantalla de éxito -->
+  <div id="quote-success" class="hidden text-center py-12">
+    <div class="bg-green-50 border border-green-200 rounded-lg p-6 inline-block">
+      <h2 class="text-section font-display text-green-800 mb-2">✓ Cotización enviada</h2>
+      <p class="text-neutral mb-4">Tu solicitud ha sido generada correctamente.</p>
+      <p class="text-label font-medium mb-2">Código: <span id="quote-code" class="text-primary font-mono"></span></p>
+      <a id="quote-whatsapp" class="block mx-auto bg-success text-white px-6 py-3 rounded font-medium mb-3">
+        Abrir WhatsApp
+      </a>
+      <button type="button" id="quote-again" class="text-primary text-sm underline">
+        Enviar de nuevo
+      </button>
+    </div>
+  </div>
+</main>

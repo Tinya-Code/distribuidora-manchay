@@ -1,0 +1,124 @@
+---
+// CatalogPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  products: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    categoryId: string;
+    brandId: string;
+    available: boolean;
+    presentations: Array<{
+      id: string;
+      name: string;
+      retailPrices: { priceFor: (qty: number) => { amount: number; format: () => string } };
+      wholesalePrices: { priceFor: (qty: number) => { amount: number; format: () => string }; nextTier: (qty: number) => { minQty: number; price: { format: () => string } } | null };
+    }>;
+  }>;
+  categories: Array<{ id: string; name: string; parentId: string | null }>;
+  brands: Array<{ id: string; name: string }>;
+  pricingMode: 'home' | 'business';
+}
+const {
+  products,
+  categories,
+  brands,
+  pricingMode,
+} = Astro.props;
+
+const topCategories = categories.filter((c: any) => !c.parentId);
+const subCategories = categories.filter((c: any) => !!c.parentId);
+const mode = pricingMode;
+---
+
+<main class="container mx-auto px-4 py-8">
+  <h1 class="text-section font-display text-primary mb-6">Catálogo</h1>
+
+  <!-- Filtros y modo -->
+  <div class="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center">
+    <div class="flex items-center gap-3">
+      <span class="text-label">Modo:</span>
+      <button
+        id="mode-toggle"
+        class={`px-3 py-1 rounded border font-medium text-sm transition ${mode === 'home' ? 'bg-primary text-white' : 'bg-surface text-neutral border-neutral'}`}
+      >
+        Hogar
+      </button>
+      <button
+        id="mode-toggle-business"
+        class={`px-3 py-1 rounded border font-medium text-sm transition ${mode === 'business' ? 'bg-primary text-white' : 'bg-surface text-neutral border-neutral'}`}
+      >
+        Negocio
+      </button>
+    </div>
+
+    <div class="flex-1 flex flex-col sm:flex-row gap-2 sm:items-center">
+      <select id="filter-category" class="flex-1 border rounded px-3 py-2 text-sm">
+        <option value="all">Todas las categorías</option>
+        {topCategories.map((c: any) => (
+          <option value={c.id}>{c.name}</option>
+        ))}
+      </select>
+      <select id="filter-subcategory" class="flex-1 border rounded px-3 py-2 text-sm hidden">
+        <option value="all">Todas las subcategorías</option>
+        {subCategories.map((c: any) => (
+          <option value={c.id}>{c.name}</option>
+        ))}
+      </select>
+      <select id="filter-brand" class="flex-1 border rounded px-3 py-2 text-sm">
+        <option value="all">Todas las marcas</option>
+        {brands.map((b: any) => (
+          <option value={b.id}>{b.name}</option>
+        ))}
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label class="flex items-center gap-1 cursor-pointer text-sm">
+        <input type="checkbox" id="cb-available" /> Solo disponibles
+      </label>
+    </div>
+  </div>
+
+  <!-- Filtros rápidos de atributos -->
+  <div class="flex flex-wrap gap-2 mb-6">
+    <button id="chip-tamano-500" class="chip px-2 py-1 border rounded-full text-xs">500 ml</button>
+    <button id="chip-tamano-15" class="chip px-2 py-1 border rounded-full text-xs">1.5 L</button>
+    <button id="chip-envase-retornable" class="chip px-2 py-1 border rounded-full text-xs">Retornable</button>
+    <button id="chip-oferta" class="chip px-2 py-1 border rounded-full text-xs">Oferta</button>
+    <button id="chip-clear" class="chip px-2 py-1 border rounded-full text-xs bg-primary text-white">Limpiar</button>
+  </div>
+
+  <!-- Orden y vista -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <select id="sort-order" class="border rounded px-3 py-2 text-sm">
+      <option value="featured">Más pedidos</option>
+      <option value="name">Nombre</option>
+      <option value="price-asc">Precio menor a mayor</option>
+      <option value="price-desc">Precio mayor a menor</option>
+    </select>
+
+    <div class="flex items-center gap-2">
+      <span class="text-label text-sm">Vista:</span>
+      <button id="view-grid" class="px-2 py-1 border rounded bg-primary text-white text-xs">Cuadrícula</button>
+      <button id="view-table" class="px-2 py-1 border rounded text-xs">Tabla</button>
+    </div>
+  </div>
+
+  <!-- Productos -->
+  <div id="product-container">
+    <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+    <table id="product-table" class="hidden w-full text-sm border-collapse">
+      <thead>
+        <tr class="border-b bg-neutral/5">
+          <th class="px-3 py-2 text-left">Producto</th>
+          <th class="px-3 py-2 text-left">Presentación</th>
+          <th class="px-3 py-2 text-right">Precio c/u</th>
+          <th class="px-3 py-2 text-center w-24">Cantidad</th>
+          <th class="px-3 py-2 text-center w-20"></th>
+        </tr>
+      </thead>
+      <tbody id="product-table-body"></tbody>
+    </table>
+  </div>
+</main>

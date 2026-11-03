@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../core/presentation/layouts/BaseLayout.astro';
+import CategoryPage from '../../core/presentation/pages/CategoryPage.astro';
+import { ensureContainer } from '../../core/composition';
+import { products, categories } from '../../tenant/data';
+import categoriesRaw from '../../tenant/data/categories.json';
+
+const container = ensureContainer();
+
+export function getStaticPaths() {
+  const raw = categoriesRaw as any[];
+  return raw
+    .filter((c: any) => !c.parentId)
+    .map((c) => ({
+      params: { category: c.slug },
+    }));
+}
+
+const categoryId = Astro.params.category as string;
+const category = categories.find((c: any) => c.id === categoryId || c.slug === categoryId);
+if (!category) {
+  return Astro.redirect('/404');
+}
+const categoryProducts = products.filter((p: any) => p.categoryId === categoryId);
+
+const categoryStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: category?.name,
+  description: category?.description,
+  url: `https://aguaspachacamac.pe/productos/${category?.slug ?? categoryId}`,
+};
+---
+
+<BaseLayout title={category ? category.name : 'Categoría'} business={container.business} structuredData={categoryStructuredData}>
+  <CategoryPage
+    category={{
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+    }}
+    products={categoryProducts}
+  />
+</BaseLayout>
+
+<script>
+  import { ensureContainer } from '../../core/composition';
+  const container = ensureContainer();
+  const cartStore = container.cartStore;
+  document.querySelectorAll('button[data-add-to-cart]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      cartStore.addToCart(
+        btn.getAttribute('data-product-id')! as any,
+        btn.getAttribute('data-presentation-id')! as any,
+        1
+      );
+      window.dispatchEvent(new CustomEvent('cart-updated'));
+      const original = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = original; }, 1000);
+    });
+  });
+</script>

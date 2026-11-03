@@ -1,0 +1,41 @@
+[
+  {
+    "id": "zona_pachacamac_centro",
+    "name": "Pachacámac centro",
+    "slug": "pachacamac-centro",
+    "distritos": ["Pachacámac"],
+    "shippingCost": 3.00,
+    "freeShippingFrom": 50.00,
+    "minOrder": 30.00,
+    "deliveryTime": "Mismo día",
+    "deliveryDays": [1, 2, 3, 4, 5, 6],
+    "slots": ["mañana", "tarde"],
+    "seo": { "title": "Venta de agua en Pachacámac", "text": "Texto propio de la zona para Google." }
+  },
+  {
+    "id": "zona_manchay",
+    "name": "Manchay",
+    "slug": "manchay",
+    "distritos": ["Pachacámac"],
+    "shippingCost": 5.00,
+    "freeShippingFrom": 80.00,
+    "minOrder": 40.00,
+    "deliveryTime": "24 horas",
+    "deliveryDays": [1, 2, 3, 4, 5, 6],
+    "slots": ["mañana", "tarde"],
+    "seo": { "title": "Venta de agua en Manchay", "text": "Agua y gaseosas con delivery en Manchay." }
+  },
+  {
+    "id": "zona_villa_el_salvador",
+    "name": "Villa El Salvador",
+    "slug": "villa-el-salvador",
+    "distritos": ["Villa El Salvador"],
+    "shippingCost": 6.00,
+    "freeShippingFrom": 100.00,
+    "minOrder": 50.00,
+    "deliveryTime": "24 horas",
+    "deliveryDays": [1, 3, 5],
+    "slots": ["mañana"],
+    "seo": { "title": "Venta de agua en Villa El Salvador", "text": "Distribuidora de agua y gaseosas en Villa El Salvador." }
+  }
+]

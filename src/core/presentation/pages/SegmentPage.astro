@@ -1,0 +1,101 @@
+---
+// SegmentPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  segment: {
+    id: string;
+    name: string;
+    slug: string;
+    title?: string;
+    text?: string;
+    suggestedProducts: string[];
+    calculator?: {
+      sizes: Array<{
+        name: string;
+        suggestion: Array<{ productId: string; presentationId?: string; quantity: number }>;
+      }>;
+    };
+  };
+  products: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    available: boolean;
+    presentations: Array<{
+      id: string;
+      name: string;
+      retailPrices: { priceFor: (qty: number) => { amount: number; format: () => string } };
+    }>;
+  }>;
+  structuredData?: Record<string, unknown>;
+}
+const {
+  segment,
+  products,
+  structuredData,
+} = Astro.props;
+const availableProducts = products.filter((p: any) => p.available);
+const suggestedProducts = availableProducts.filter((p: any) => segment.suggestedProducts.includes(p.id));
+const segmentName = segment.name;
+const segmentSlug = segment.slug;
+const categoriaName = segment.title ?? segment.name;
+---
+
+<main class="container mx-auto px-4 py-8">
+  <nav class="mb-6">
+    <a href="/negocios" class="text-help">Negocios</a>
+    <span class="mx-1 text-neutral">/</span>
+    <span class="text-section font-medium">{segmentName}</span>
+  </nav>
+
+  <h1 class="text-section font-display text-primary mb-4">{segmentName}</h1>
+  <p class="text-neutral mb-6">{segment.text}</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {suggestedProducts.map((p: any) => {
+      const pres = p.presentations?.[0];
+      const price = pres?.retailPrices?.priceFor?.(1)?.format?.() ?? '';
+      return (
+        <article class="border border-neutral/20 rounded-lg p-4 bg-surface">
+          <h3 class="text-label font-medium">{p.name}</h3>
+          <p class="text-help text-neutral">{p.descriptions?.short ?? p.descripcion ?? ''}</p>
+          <div class="mt-2">
+            <span class="text-primary font-medium">{price}</span>
+          </div>
+          <div class="mt-3">
+            <button
+              class="flex-1 bg-primary text-white px-4 py-2 rounded font-medium"
+              data-add-to-cart
+              data-product-id={p.id}
+              data-presentation-id={pres?.id}
+              class="w-full"
+            >
+              Agregar
+            </button>
+          </div>
+        </article>
+      );
+    })}
+  </div>
+
+  <div class="mt-8 border-t pt-6">
+    <h2 class="text-label font-medium mb-4">Calculadora de consumo</h2>
+    <p class="text-help mb-4">Selecciona el tamaño de tu negocio y te proponemos una lista de compra.</p>
+    <div class="border border-neutral/20 rounded-lg p-4 bg-surface space-y-4">
+      {segment.calculator?.sizes.map((size: any) => (
+        <div key={size.name} class="p-3 border rounded bg-neutral/5">
+          <h3 class="text-label font-medium">{size.name}</h3>
+          <ul class="list-disc list-inside text-help text-sm space-y-1">
+            {size.suggestion.map((s: any) => (
+              <li>{s.quantity} x {s.productId}</li>
+            ))}
+          </ul>
+          <button class="bg-secondary text-white px-6 py-2 rounded font-medium w-full">Cargar al carrito</button>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <div class="mt-8">
+    <a href="/cotizar" class="block w-full bg-primary text-white text-center py-3 rounded-md font-medium">Solicitar cotización</a>
+  </div>
+</main>

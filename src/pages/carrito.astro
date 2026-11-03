@@ -1,0 +1,377 @@
+---
+import BaseLayout from '../core/presentation/layouts/BaseLayout.astro';
+import Button from '../core/presentation/ui/atoms/Button.astro';
+import CartPage from '../core/presentation/pages/CartPage.astro';
+import { ensureContainer } from '../core/composition';
+import { PricingMode } from '../core/domain';
+import productsRaw from '../tenant/data/products.json';
+
+const container = ensureContainer();
+const cartStore = container.cartStore;
+const pricingModeStore = container.pricingModeStore;
+const catalog = container.catalog;
+const pricingService = container.pricingService;
+
+const cart = cartStore.get();
+const lines = cart.getLines();
+const mode = pricingModeStore.get() as PricingMode;
+
+const lineViews = lines.map((line: any) => {
+  const product = catalog.products().find((p: any) => p.id === line.productId);
+  const presentation = product?.presentations.find((pr: any) => pr.id === line.presentationId);
+  const priceList = presentation ? (mode === 'business' ? presentation.wholesalePrices : presentation.retailPrices) : null;
+  const unitPrice = priceList?.priceFor(line.quantity) ?? { amount: 0, format: () => 'S/ 0.00' };
+  const subtotal = unitPrice.amount * line.quantity;
+  const nextTier = priceList?.nextTier(line.quantity);
+  const tierSaving = nextTier ? unitPrice.subtract(nextTier.price).multiply(line.quantity) : { amount: 0, format: () => 'S/ 0.00' };
+  return {
+    productId: line.productId,
+    presentationId: line.presentationId,
+    name: product?.name ?? 'Producto',
+    presentationName: presentation?.name ?? 'Presentación',
+    quantity: line.quantity,
+    unitPrice: unitPrice.format(),
+    subtotal: new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(subtotal),
+    nextTierMinQty: nextTier?.minQty ?? null,
+    nextTierPrice: nextTier?.price.format() ?? null,
+    tierSaving: tierSaving.amount > 0 ? tierSaving.format() : null,
+    tierSavingAmount: tierSaving.amount,
+  };
+});
+
+const { PreviewCartTotals } = await import('../core/application');
+const preview = new PreviewCartTotals(catalog, pricingService);
+const totals = preview.execute(cart, mode);
+const zones = catalog.zones();
+
+// Sugerencias: complementarios de los productos en el carrito (sin duplicar lo ya agregado)
+const cartProductIds = new Set(lines.map((l: any) => l.productId));
+const suggestedMap = new Map<string, { productId: string; presentationId: string; slug: string; name: string; price: any }>();
+for (const line of lines) {
+  const product = catalog.products().find((p: any) => p.id === line.productId);
+  const complements = product?.complements ?? [];
+  for (const cid of complements) {
+    if (cartProductIds.has(cid)) continue;
+    const cp = (productsRaw as any[]).find((p: any) => p.id === cid);
+    if (!cp || suggestedMap.has(cid)) continue;
+    const cpres = cp.presentations[0];
+    const cpriceList = mode === 'business' ? cpres.wholesalePrices : cpres.retailPrices;
+    suggestedMap.set(cid, {
+      productId: cid,
+      presentationId: cpres.id,
+      slug: cp.slug,
+      name: cp.name,
+      price: cpriceList.priceFor(1).format(),
+    });
+  }
+}
+const suggestedLines = Array.from(suggestedMap.values()).slice(0, 6);
+---
+
+<BaseLayout title="Carrito" business={container.business}><CartPage
+  isEmpty={lines.length === 0}
+  lines={lineViews}
+  totals={{
+    subtotal: totals.subtotal?.format() ?? 'S/ 0.00',
+    shipping: totals.shipping?.format() ?? 'S/ 0.00',
+    total: totals.total?.format() ?? 'S/ 0.00',
+    missingMinimum: totals.missingMinimum?.format() ?? totals.missingForMinimum?.format() ?? 'S/ 0.00',
+    missingFreeShipping: totals.missingFreeShipping?.format() ?? totals.missingForFreeShipping?.format() ?? 'S/ 0.00',
+    minOrderFormatted: zones[0]?.minOrder?.format() ?? 'S/ 0.00',
+    freeShippingFromFormatted: zones[0]?.freeShippingFrom?.format() ?? null,
+  }}
+  zones={zones.map((z) => ({ id: z.id, name: z.name }))}
+  suggestedLines={suggestedLines}
+  business={{ name: container.business.name, whatsapp: container.business.whatsapp }}
+></CartPage></BaseLayout>
+
+<script>
+  import { ensureContainer } from '../core/composition';
+  import { PricingMode } from '../core/domain';
+
+  const container = ensureContainer();
+  const cartStore = container.cartStore;
+  const catalog = container.catalog;
+  const pricingModeStore = container.pricingModeStore;
+  const pricingService = container.pricingService;
+  const orderGateway = container.orderGateway;
+  const messageFormatter = container.messageFormatter;
+  const messageChannel = container.messageChannel;
+  const codeGenerator = container.codeGenerator;
+  const clock = container.clock;
+  const lastOrderStorage = container.lastOrderStorage;
+  const analytics = container.analytics;
+  const business = container.business;
+
+  const form = document.getElementById('checkout-form');
+  const successScreen = document.getElementById('success-screen');
+  const orderCodeEl = document.getElementById('order-code');
+  const btnOpenWhatsApp = document.getElementById('btn-open-whatsapp');
+  const btnAgain = document.getElementById('btn-again');
+
+  // Renderizar líneas del carrito desde localStorage (SSR no tiene acceso a localStorage)
+  function renderCartLines() {
+    const containerEl = document.getElementById('cart-lines-container');
+    if (!containerEl) return;
+
+    const cartLines = (() => {
+        try {
+          const raw = localStorage.getItem('cart');
+          return raw ? JSON.parse(raw).lines ?? [] : [];
+        } catch {
+          return [];
+        }
+      })();
+    const mode = pricingModeStore.get() as PricingMode;
+
+    if (cartLines.length === 0) {
+      containerEl.innerHTML = '';
+      return;
+    }
+
+    containerEl.innerHTML = cartLines.map((line: any) => {
+      const product = catalog.products().find((p: any) => p.id === line.productId);
+      const presentation = product?.presentations.find((pr: any) => pr.id === line.presentationId);
+      const priceList = presentation ? (mode === 'business' ? presentation.wholesalePrices : presentation.retailPrices) : null;
+      const unitPrice = priceList?.priceFor(line.quantity) ?? { amount: 0, format: () => 'S/ 0.00' };
+      const nextTier = priceList?.nextTier(line.quantity);
+      const tierSaving = nextTier ? unitPrice.subtract(nextTier.price).multiply(line.quantity) : { amount: 0, format: () => 'S/ 0.00' };
+
+      return `
+        <div class="flex items-center gap-4 p-4 border border-neutral/20 rounded bg-surface" data-line data-product-id="${line.productId}" data-presentation-id="${line.presentationId}">
+          <div class="flex-1 min-w-0">
+            <p class="text-label font-medium">${product?.name ?? 'Producto'}</p>
+            <p class="text-help text-neutral">${presentation?.name ?? 'Presentación'}</p>
+            <p class="text-help">${unitPrice.format()} c/u</p>
+            ${nextTier ? `
+              <p class="text-help text-xs mt-1">
+                Lleva <strong>${nextTier.minQty}</strong> y paga <strong>${nextTier.price.format()}</strong> c/u.
+                ${tierSaving.amount > 0 ? '<span class="text-success ml-1">• Ahorras ' + tierSaving.format() + '</span>' : ''}
+              </p>
+            ` : ''}
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="px-2 py-1 border rounded text-sm" data-line-dec>−</button>
+            <span class="w-8 text-center font-medium" data-line-qty>${line.quantity}</span>
+            <button type="button" class="px-2 py-1 border rounded text-sm" data-line-inc>+</button>
+          </div>
+          <button type="button" class="text-danger text-sm" data-line-remove>Quitar</button>
+        </div>
+      `;
+    }).join('');
+
+    // Re-wire line buttons (no page reload)
+    containerEl.querySelectorAll('[data-line-inc]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lineEl = btn.closest('[data-line]')!;
+        const productId = lineEl.getAttribute('data-product-id')!;
+        const presentationId = lineEl.getAttribute('data-presentation-id')!;
+        const qtyEl = lineEl.querySelector('[data-line-qty]')!;
+        const q = parseInt(qtyEl.textContent || '1', 10) + 1;
+        cartStore.changeQuantity(productId as any, presentationId as any, q);
+        window.dispatchEvent(new CustomEvent('cart-updated'));
+        renderCartLines();
+      });
+    });
+
+    containerEl.querySelectorAll('[data-line-dec]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lineEl = btn.closest('[data-line]')!;
+        const productId = lineEl.getAttribute('data-product-id')!;
+        const presentationId = lineEl.getAttribute('data-presentation-id')!;
+        const qtyEl = lineEl.querySelector('[data-line-qty]')!;
+        const q = Math.max(1, parseInt(qtyEl.textContent || '1', 10) - 1);
+        cartStore.changeQuantity(productId as any, presentationId as any, q);
+        window.dispatchEvent(new CustomEvent('cart-updated'));
+        renderCartLines();
+      });
+    });
+
+    containerEl.querySelectorAll('[data-line-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lineEl = btn.closest('[data-line]')!;
+        const productId = lineEl.getAttribute('data-product-id')!;
+        const presentationId = lineEl.getAttribute('data-presentation-id')!;
+        cartStore.removeFromCart(productId as any, presentationId as any);
+        window.dispatchEvent(new CustomEvent('cart-updated'));
+        renderCartLines();
+      });
+    });
+  }
+
+  renderCartLines();
+
+  // Toggle business fields (solo si existe el formulario)
+  if (form) {
+    const customerTypeSelect = form.querySelector('select[name="customerType"]') as HTMLSelectElement;
+    const businessFields = form.querySelector('.business-fields') as HTMLElement;
+    const cashFields = form.querySelector('.cash-fields') as HTMLElement;
+    const paymentMethodSelect = form.querySelector('select[name="paymentMethod"]') as HTMLSelectElement;
+
+    function toggleBusinessFields() {
+      businessFields.style.display = customerTypeSelect.value === 'business' ? 'block' : 'none';
+    }
+    function toggleCashFields() {
+      cashFields.style.display = paymentMethodSelect.value === 'cash' ? 'block' : 'none';
+    }
+    customerTypeSelect.addEventListener('change', toggleBusinessFields);
+    paymentMethodSelect.addEventListener('change', toggleCashFields);
+    toggleBusinessFields();
+    toggleCashFields();
+  }
+
+  // Share cart
+  document.getElementById('btn-share-cart')?.addEventListener('click', () => {
+    const encoded = btoa(JSON.stringify({
+      lines: cartStore.get().getLines().map((l: any) => ({
+        p: l.productId,
+        r: l.presentationId,
+        q: l.quantity,
+      })),
+    }));
+    const url = `${window.location.origin}/carrito?cart=${encoded}`;
+    navigator.clipboard.writeText(url);
+    alert('Enlace del carrito copiado al portapapeles');
+  });
+
+  // Clear cart
+  document.getElementById('btn-clear-cart')?.addEventListener('click', () => {
+    if (confirm('¿Vaciar el carrito?')) {
+      cartStore.clear();
+      location.reload();
+    }
+  });
+
+  // Repeat last order
+  document.getElementById('btn-repeat-order')?.addEventListener('click', () => {
+    const result = container.repeatLastOrder.execute();
+    if (result.ok) {
+      location.reload();
+    } else {
+      alert(result.error);
+    }
+  });
+
+  // Submit order (solo si existe el formulario)
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form as HTMLFormElement);
+      const customerType = formData.get('customerType') as 'home' | 'business';
+      const paymentMethod = formData.get('paymentMethod') as 'cash' | 'yape' | 'plin' | 'transfer';
+      const cashAmount = formData.get('cashAmount') ? parseFloat(formData.get('cashAmount') as string) : undefined;
+
+      const input = {
+        zoneId: formData.get('zoneId') as string,
+        address: formData.get('address') as string,
+        reference: formData.get('reference') as string || undefined,
+        date: formData.get('date') as string || undefined,
+        slot: formData.get('slot') as string || undefined,
+        customerName: formData.get('customerName') as string,
+        customerPhone: formData.get('customerPhone') as string,
+        customerType,
+        businessName: formData.get('businessName') as string || undefined,
+        document: formData.get('document') as string || undefined,
+        paymentMethod,
+        cashAmount,
+        invoice: formData.get('invoice') as 'boleta' | 'factura',
+        notes: formData.get('notes') as string || undefined,
+        pricingMode: pricingModeStore.get() as PricingMode,
+      };
+
+      const { SubmitOrder } = await import('../core/application');
+      const submitOrder = new SubmitOrder(
+        cartStore.get(),
+        container.catalog,
+        pricingService,
+        orderGateway,
+        messageFormatter,
+        messageChannel,
+        codeGenerator,
+        clock,
+        lastOrderStorage,
+        analytics,
+        business,
+      );
+
+      const res = await submitOrder.execute(input);
+
+      if (!res.ok) {
+        alert('Errores: ' + res.error.join(', '));
+        return;
+      }
+
+      const { order, whatsappLink } = res.value;
+
+      // Save last order
+      lastOrderStorage.save(order);
+
+      // Show success
+      if (orderCodeEl) orderCodeEl.textContent = order.code.value;
+      btnOpenWhatsApp?.setAttribute('href', whatsappLink);
+      form.classList.add('hidden');
+      successScreen?.classList.remove('hidden');
+
+      // Open WhatsApp in new tab
+      window.open(whatsappLink, '_blank');
+
+      analytics.track('order_submitted', { code: order.code.value });
+    });
+  }
+
+  btnAgain?.addEventListener('click', () => {
+    const link = btnOpenWhatsApp?.getAttribute('href');
+    if (link) window.open(link, '_blank');
+  });
+
+  // Guardar y cargar datos del cliente en localStorage para la próxima compra
+  if (form) {
+    const customerFields = ['customerName', 'customerPhone', 'customerType', 'businessName', 'document', 'address', 'reference', 'zoneId', 'date', 'slot', 'paymentMethod', 'invoice', 'notes'];
+    const loadCustomerData = () => {
+      try {
+        const raw = localStorage.getItem('cliente_datos');
+        if (!raw) return;
+        const datos = JSON.parse(raw);
+        for (const field of customerFields) {
+          const el = form.elements.namedItem(field);
+          if (el && datos[field] !== undefined) {
+            if (el instanceof HTMLSelectElement) el.value = datos[field];
+            else el.value = datos[field];
+          }
+        }
+        toggleBusinessFields();
+        toggleCashFields();
+      } catch {}
+    };
+    const saveCustomerData = () => {
+      const datos: Record<string, string> = {};
+      for (const field of customerFields) {
+        const el = form.elements.namedItem(field);
+        if (el instanceof HTMLSelectElement) datos[field] = el.value;
+        else if (el instanceof HTMLInputElement) datos[field] = el.value;
+        else if (el instanceof HTMLTextAreaElement) datos[field] = el.value;
+      }
+      try { localStorage.setItem('cliente_datos', JSON.stringify(datos)); } catch {}
+    };
+
+    loadCustomerData();
+    form.addEventListener('input', saveCustomerData);
+    form.addEventListener('change', saveCustomerData);
+  }
+
+  // Sugerencias: agregar complementario al carrito
+  document.querySelectorAll('button[data-suggest-add]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      cartStore.addToCart(
+        btn.getAttribute('data-product-id')! as any,
+        btn.getAttribute('data-presentation-id')! as any,
+        1
+      );
+      window.dispatchEvent(new CustomEvent('cart-updated'));
+      const original = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = original; }, 1000);
+    });
+  });
+</script>

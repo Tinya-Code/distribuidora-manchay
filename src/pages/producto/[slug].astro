@@ -1,0 +1,145 @@
+---
+import BaseLayout from '../../core/presentation/layouts/BaseLayout.astro';
+import Button from '../../core/presentation/ui/atoms/Button.astro';
+import Price from '../../core/presentation/ui/atoms/Price.astro';
+import ProductPage from '../../core/presentation/pages/ProductPage.astro';
+import { products as domainProducts, categories } from '../../tenant/data';
+import productsRaw from '../../tenant/data/products.json';
+import { getContainer } from '../../core/composition';
+import { ProductId, PresentationId } from '../../core/domain';
+
+export function getStaticPaths() {
+  const raw = productsRaw as any[];
+  return raw.map((p) => ({
+    params: { slug: p.slug },
+    props: { slug: p.slug },
+  }));
+}
+
+// Get product by slug from raw JSON (has slug), then map to domain for logic
+const { slug } = Astro.props as any;
+const rawProduct = (productsRaw as any[]).find((p: any) => p.slug === slug);
+if (!rawProduct) {
+  return Astro.redirect('/404');
+}
+
+const product = domainProducts.find((p: any) => p.id === rawProduct.id) as any;
+const defaultPresentation = product.presentations[0];
+const container = getContainer();
+const pricingMode = container.pricingModeStore.get() as 'home' | 'business';
+const mode = pricingMode;
+
+const priceList = pricingMode === 'business'
+  ? defaultPresentation.wholesalePrices
+  : defaultPresentation.retailPrices;
+const currentPrice = priceList.priceFor(1);
+
+const productStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.name,
+  description: product.description,
+  image: `/img/placeholder/product-${product.slug}.svg`,
+  category: product.categoryId,
+  brand: product.brandId ? { '@type': 'Brand', name: product.brandId } : undefined,
+  offers: {
+    '@type': 'Offer',
+    price: currentPrice.amount,
+    priceCurrency: 'PEN',
+    availability: product.available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+  },
+};
+const tierInfo = priceList.nextTier(1);
+
+const tierRows = priceList.allTiers().map((tier: any) => ({
+  minQty: tier.minQty,
+  priceFormatted: tier.price.format(),
+}));
+
+// Datos de complementarios y alternativas (ya resueltos, sin importar tenant en la vista dumb)
+const resolveProductData = (id: string) => {
+  const p = (productsRaw as any[]).find((x: any) => x.id === id);
+  if (!p) return null;
+  const pres = p.presentations[0];
+  const priceList2 = mode === 'business' ? pres.wholesalePrices : pres.retailPrices;
+  return {
+    productId: p.id,
+    presentationId: pres.id,
+    slug: p.slug,
+    name: p.name,
+    price: priceList2.priceFor(1).format(),
+  };
+};
+
+const complementsData = (product.complements ?? []).map(resolveProductData).filter(Boolean);
+const alternativesData = (product.alternatives ?? []).map(resolveProductData).filter(Boolean);
+---
+
+<BaseLayout title={product.name} image={`/img/placeholder/product-${product.slug}.svg`} structuredData={productStructuredData}>
+  <ProductPage
+    product={{
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      categoryId: product.categoryId,
+      brandId: product.brandId,
+      description: product.description,
+      images: product.images,
+      available: product.available,
+      returnable: product.returnable,
+      envase: product.envase,
+      complements: product.complements,
+      alternatives: product.alternatives,
+      presentations: product.presentations,
+    }}
+    defaultPresentationId={defaultPresentation.id}
+    mode={mode}
+    currentPriceFormatted={currentPrice.format()}
+    tierInfoFormatted={tierInfo ? { minQty: tierInfo.minQty, priceFormatted: tierInfo.price.format() } : undefined}
+    tierRows={tierRows}
+    complements={complementsData}
+    alternatives={alternativesData}
+  />
+</BaseLayout>
+
+<script>
+  import { ensureContainer } from '../../core/composition';
+
+  const container = ensureContainer();
+  const pricingModeStore = container.pricingModeStore;
+  const cartStore = container.cartStore;
+  const catalog = container.catalog;
+
+  function addToCart(productId: string, presentationId: string, qty: number = 1) {
+    cartStore.addToCart(productId as any, presentationId as any, qty);
+    window.dispatchEvent(new CustomEvent('cart-updated'));
+    const btn = document.querySelector(`button[data-product-id="${productId}"]`);
+    if (btn) {
+      const original = btn.textContent;
+      btn.textContent = '✓ Agregado';
+      btn.classList.add('bg-success');
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('bg-success');
+      }, 1500);
+    }
+  }
+
+  document.querySelectorAll('button[data-add-to-cart]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      addToCart(btn.getAttribute('data-product-id')!, btn.getAttribute('data-presentation-id')!);
+    });
+  });
+
+  document.querySelectorAll('button[data-whatsapp-product]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = catalog.products().find((x: any) => x.id === btn.getAttribute('data-product-id'))!;
+      const pres = p.presentations[0];
+      const mode = pricingModeStore.get() as 'home' | 'business';
+      const pl = mode === 'business' ? pres.wholesalePrices : pres.retailPrices;
+      const price = pl.priceFor(1);
+      const msg = `Hola, quiero pedir este producto:\n• ${p.name} · ${pres.name} = ${price.format()}`;
+      window.open(`https://wa.me/${container.business.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`);
+    });
+  });
+</script>

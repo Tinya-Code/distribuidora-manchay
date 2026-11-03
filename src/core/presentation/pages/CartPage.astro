@@ -1,0 +1,267 @@
+---
+// CartPage (dumb view) — recibe todo por props, sin lógica de negocio, sin layout
+interface Props {
+  isEmpty: boolean;
+  lines: Array<{
+    productId: string;
+    presentationId: string;
+    name: string;
+    presentationName: string;
+    quantity: number;
+    unitPrice: string;
+    subtotal: string;
+    nextTierMinQty: number | null;
+    nextTierPrice: string | null;
+    tierSaving: string | null;
+    tierSavingAmount: number;
+  }>;
+  totals: {
+    subtotal: string;
+    shipping: string;
+    total: string;
+    missingMinimum: string;
+    missingFreeShipping: string;
+    minOrderFormatted: string;
+    freeShippingFromFormatted: string | null;
+  };
+  zones: Array<{ id: string; name: string }>;
+  suggestedLines: Array<{
+    productId: string;
+    presentationId: string;
+    slug: string;
+    name: string;
+    price: string;
+  }>;
+}
+const {
+  isEmpty,
+  lines,
+  totals,
+  zones,
+  suggestedLines,
+} = Astro.props;
+---
+
+<main class="container mx-auto px-4 py-8">
+  <h1 class="text-section font-display text-primary mb-6">Carrito</h1>
+
+  {isEmpty ? (
+    <div class="text-center py-12">
+      <p class="text-neutral">Tu carrito está vacío.</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+        <a href="/productos" class="bg-primary text-white px-6 py-3 rounded font-medium">Ver productos</a>
+        <button type="button" id="btn-repeat-order" class="border border-primary text-primary px-6 py-3 rounded font-medium">
+          Repetir último pedido
+        </button>
+      </div>
+    </div>
+  ) : null}
+
+  {!isEmpty && (
+    <>
+      <!-- Resumen -->
+      <div class="mb-6">
+        <div class="flex justify-between text-label mb-2">
+          <span>Subtotal</span>
+          <span data-cart-subtotal>{totals.subtotal}</span>
+        </div>
+        <div class="flex justify-between text-label mb-2">
+          <span>Envío</span>
+          <span data-cart-shipping>{totals.shipping}</span>
+        </div>
+        <div class="flex justify-between text-label font-bold">
+          <span>Total</span>
+          <span data-cart-total>{totals.total}</span>
+        </div>
+      </div>
+
+      <!-- Barras de progreso -->
+      {parseInt(totals.missingMinimum.replace(/[^\d.,]/g, ''), 10) > 0 && (
+        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-blue-800 text-sm">
+          Te faltan <strong>{totals.missingMinimum}</strong> para alcanzar el pedido mínimo ({totals.minOrderFormatted}).
+        </div>
+      )}
+      {parseInt(totals.missingFreeShipping.replace(/[^\d.,]/g, ''), 10) > 0 && totals.freeShippingFromFormatted && (
+        <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
+          Te faltan <strong>{totals.missingFreeShipping}</strong> para envío gratis ({totals.freeShippingFromFormatted}).
+        </div>
+      )}
+
+      <!-- Sugerencias: muchos clientes también llevan -->
+      {suggestedLines.length > 0 && (
+        <div class="mb-6 border border-neutral/20 rounded-lg p-4 bg-surface">
+          <h3 class="text-label font-medium mb-3">Muchos clientes también llevan</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {suggestedLines.map((sl) => (
+              <article class="border border-neutral/20 rounded-lg p-3 bg-surface text-center">
+                <img src={`/img/placeholder/product-${sl.slug}.svg`} alt={sl.name} class="w-16 h-16 mx-auto mb-2 object-contain" />
+                <p class="text-label font-medium text-sm">{sl.name}</p>
+                <p class="text-help text-xs">{sl.price}</p>
+                <Button variant="secondary" data-suggest-add data-product-id={sl.productId} data-presentation-id={sl.presentationId} class="w-full mt-2 text-xs py-1">
+                  Agregar
+                </Button>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  )}
+
+  <!-- Líneas del carrito (siempre presente en el DOM para renderizado en cliente) -->
+  <div class="space-y-4 mb-8" id="cart-lines-container">
+    {!isEmpty && lines.map((lv) => (
+      <div class="flex items-center gap-4 p-4 border border-neutral/20 rounded bg-surface" data-line data-product-id={lv.productId} data-presentation-id={lv.presentationId}>
+        <div class="flex-1 min-w-0">
+          <p class="text-label font-medium">{lv.name}</p>
+          <p class="text-help text-neutral">{lv.presentationName}</p>
+          <p class="text-help">{lv.unitPrice} c/u</p>
+          {lv.nextTierMinQty && (
+            <p class="text-help text-xs mt-1">
+              Lleva <strong>{lv.nextTierMinQty}</strong> y paga <strong>{lv.nextTierPrice}</strong> c/u.
+              {lv.tierSaving && lv.tierSavingAmount > 0 && (
+                <span class="text-success ml-1">• Ahorras {lv.tierSaving}</span>
+              )}
+            </p>
+          )}
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-2 py-1 border rounded text-sm" data-line-dec>−</button>
+          <span class="w-8 text-center font-medium" data-line-qty>{lv.quantity}</span>
+          <button type="button" class="px-2 py-1 border rounded text-sm" data-line-inc>+</button>
+        </div>
+        <button type="button" class="text-danger text-sm" data-line-remove>Quitar</button>
+      </div>
+    ))}
+  </div>
+
+  {!isEmpty && (
+    <>
+      <!-- Formulario de pedido -->
+      <form id="checkout-form" class="space-y-4">
+        <h2 class="text-section font-medium text-primary mb-4">Datos del pedido</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label font-medium mb-1">Nombre y apellidos <span class="text-danger">*</span></label>
+            <input type="text" name="customerName" required class="w-full border rounded px-3 py-2" placeholder="Juan Pérez" />
+          </div>
+          <div>
+            <label class="block text-label font-medium mb-1">Teléfono <span class="text-danger">*</span></label>
+            <input type="tel" name="customerPhone" required class="w-full border rounded px-3 py-2" placeholder="999 111 222" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label font-medium mb-1">Tipo de cliente</label>
+            <select name="customerType" class="w-full border rounded px-3 py-2">
+              <option value="home">Hogar</option>
+              <option value="business">Negocio</option>
+            </select>
+          </div>
+          <div class="business-fields">
+            <label class="block text-label font-medium mb-1">Nombre del negocio</label>
+            <input type="text" name="businessName" class="w-full border rounded px-3 py-2" placeholder="Restaurante El Sabor" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label font-medium mb-1">Documento (RUC/DNI) <span class="text-neutral">opcional</span></label>
+            <input type="text" name="document" class="w-full border rounded px-3 py-2" placeholder="20000000001" />
+          </div>
+          <div>
+            <label class="block text-label font-medium mb-1">Zona de entrega <span class="text-danger">*</span></label>
+            <select name="zoneId" required class="w-full border rounded px-3 py-2">
+              {zones.map((z) => `<option value="${z.id}">${z.name}</option>`)}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label font-medium mb-1">Dirección <span class="text-danger">*</span></label>
+            <input type="text" name="address" required class="w-full border rounded px-3 py-2" placeholder="Jr. Ejemplo 456" />
+          </div>
+          <div>
+            <label class="block text-label font-medium mb-1">Referencia</label>
+            <input type="text" name="reference" class="w-full border rounded px-3 py-2" placeholder="Frente al mercado" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label font-medium mb-1">Fecha de entrega</label>
+            <input type="date" name="date" class="w-full border rounded px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-label font-medium mb-1">Franja</label>
+            <select name="slot" class="w-full border rounded px-3 py-2">
+              <option value="mañana">Mañana</option>
+              <option value="tarde">Tarde</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label font-medium mb-1">Forma de pago <span class="text-danger">*</span></label>
+            <select name="paymentMethod" required class="w-full border rounded px-3 py-2">
+              <option value="cash">Efectivo</option>
+              <option value="yape">Yape</option>
+              <option value="plin">Plin</option>
+              <option value="transfer">Transferencia</option>
+            </select>
+          </div>
+          <div class="cash-fields">
+            <label class="block text-label font-medium mb-1">Paga con (monto)</label>
+            <input type="number" name="cashAmount" class="w-full border rounded px-3 py-2" placeholder="200.00" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-label font-medium mb-1">Comprobante</label>
+            <select name="invoice" class="w-full border rounded px-3 py-2">
+              <option value="boleta">Boleta</option>
+              <option value="factura">Factura</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-label font-medium mb-1">Notas</label>
+          <textarea name="notes" rows="3" class="w-full border rounded px-3 py-2" placeholder="Notas adicionales…"></textarea>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <Button variant="primary" type="submit" class="flex-1">
+            Enviar pedido por WhatsApp
+          </Button>
+          <Button variant="secondary" type="button" id="btn-share-cart" class="flex-1">
+            Compartir carrito
+          </Button>
+          <Button variant="danger" type="button" id="btn-clear-cart" class="flex-1">
+            Vaciar carrito
+          </Button>
+        </div>
+      </form>
+    </>
+  )}
+
+  <!-- Pantalla de éxito (oculta por defecto) -->
+  <div id="success-screen" class="hidden text-center py-12">
+    <div class="bg-green-100 border border-green-200 rounded-lg p-6 inline-block">
+      <h2 class="text-section font-display text-green-800 mb-2">✓ Pedido enviado</h2>
+      <p class="text-neutral mb-4">Tu pedido ha sido generado correctamente.</p>
+      <p class="text-label font-medium mb-2">Código: <span id="order-code" class="text-primary font-mono"></span></p>
+      <a id="btn-open-whatsapp" class="block mx-auto bg-success text-white px-6 py-3 rounded font-medium mb-3">
+        Abrir WhatsApp
+      </a>
+      <button type="button" id="btn-again" class="text-primary text-sm underline">
+        Abrir WhatsApp de nuevo
+      </button>
+    </div>
+  </div>
+</main>

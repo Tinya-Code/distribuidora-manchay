@@ -1,0 +1,5 @@
+[
+  { "id": "marca_sanluis", "name": "San Luis", "slug": "san-luis", "logo": "san-luis.svg" },
+  { "id": "marca_inca", "name": "Inca Kola", "slug": "inca-kola", "logo": "inca-kola.svg" },
+  { "id": "marca_cielo", "name": "Cielo", "slug": "cielo", "logo": "cielo.svg" }
+]

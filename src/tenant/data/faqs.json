@@ -1,0 +1,7 @@
+[
+  { "id": "faq_001", "question": "¿Hacen delivery a mi zona?", "answer": "Repartimos en Pachacámac, Manchay y Villa El Salvador. Consulta la lista de zonas." },
+  { "id": "faq_002", "question": "¿Cuál es el pedido mínimo?", "answer": "Depende de la zona, desde S/ 30.00. Se muestra en el carrito." },
+  { "id": "faq_003", "question": "¿Cómo pago?", "answer": "Efectivo, Yape, Plin o transferencia al recibir." },
+  { "id": "faq_004", "question": "¿El bidón es retornable?", "answer": "Sí, se recoge el bidón vacío en la siguiente entrega. El depósito se descuenta." },
+  { "id": "faq_005", "question": "¿La disponibilidad es en tiempo real?", "answer": "No. La disponibilidad se confirma al responderte por WhatsApp." }
+]
